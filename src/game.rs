@@ -32,15 +32,110 @@ impl Game {
             camera,
         }
     }
+    pub async fn init(&mut self) {
+        use crate::gfx::Sprite;
+        use crate::phx::{Gravity, Hitbox, Position, Velocity};
+        use glam::Vec2;
+
+        let texture: Texture2D = macroquad::load_texture("media/slimeu_base-b.png").await;
+        macroquad::set_texture_filter(texture, macroquad::FilterMode::Nearest);
+
+        self.textures.insert("slimeu_base".into(), texture);
+
+        self.world
+            .push((Hitbox::new(makeshift_static_platform(&self.resources)),));
+        self.world.push((
+            Position {
+                src: Vec2::new(10.0, 10.0),
+            },
+            Sprite::new("slimeu_base".to_owned(), &texture),
+        ));
+        self.world.push((
+            Position {
+                src: Vec2::new(30.0, 10.0),
+            },
+            Sprite::new("slimeu_base".to_owned(), &texture),
+            Velocity {
+                src: Vec2::new(0., 0.),
+            },
+            Gravity::new(Vec2::new(0.0, 8.0)),
+            Hitbox::new(makeshift_dynamic_collider(&self.resources)),
+        ));
+        self.world.push((
+            Position {
+                src: Vec2::new(50.0, 10.0),
+            },
+            Sprite::new("slimeu_base".to_owned(), &texture),
+        ));
+    }
     pub fn update(&mut self) {
         self.schedule.execute(&mut self.world, &mut self.resources);
     }
 }
 
 fn init_resources() -> Resources {
-    Resources::default()
+    let mut resources = Resources::default();
+    resources.insert(crate::phx::PhysicsWorld::new());
+    resources.insert(crate::phx::BodySet::new());
+    resources.insert(crate::phx::ColliderSet::new());
+    resources
 }
 
 fn init_schedule() -> Schedule {
-    Schedule::builder().build()
+    Schedule::builder()
+        .add_system(crate::phx::gravity_system())
+        .add_system(crate::phx::resphys_presync_system())
+        .add_system(crate::phx::resphys_sync_system())
+        .add_system(crate::phx::reset_velocity_system())
+        .build()
+}
+
+fn makeshift_static_platform(resources: &Resources) -> resphys::ColliderHandle {
+    use crate::phx::{BodySet, ColliderSet, ColliderTag, PhysicsWorld};
+    use glam::Vec2;
+
+    let mut physics = resources.get_mut::<PhysicsWorld>().unwrap();
+    let mut bodies = resources.get_mut::<BodySet>().unwrap();
+    let mut colliders = resources.get_mut::<ColliderSet>().unwrap();
+
+    let body = resphys::builder::BodyDesc::new()
+        .with_position(Vec2::new(70., 80.))
+        .make_static()
+        .build();
+    let collider = resphys::builder::ColliderDesc::new(
+        resphys::AABB {
+            half_exts: Vec2::new(60., 8.),
+        },
+        ColliderTag::Tile,
+    );
+
+    let bhandle = bodies.insert(body);
+    colliders
+        .insert(collider.build(bhandle), &mut bodies, &mut physics)
+        .unwrap()
+}
+
+fn makeshift_dynamic_collider(resources: &Resources) -> resphys::ColliderHandle {
+    use crate::phx::{BodySet, ColliderSet, ColliderTag, PhysicsWorld};
+    use glam::Vec2;
+
+    let mut physics = resources.get_mut::<PhysicsWorld>().unwrap();
+    let mut bodies = resources.get_mut::<BodySet>().unwrap();
+    let mut colliders = resources.get_mut::<ColliderSet>().unwrap();
+
+    let body = resphys::builder::BodyDesc::new()
+        .with_position(Vec2::new(30., 10.))
+        .build();
+    let collider = resphys::builder::ColliderDesc::new(
+        resphys::AABB {
+            half_exts: Vec2::new(5., 4.),
+        },
+        ColliderTag::Player,
+    )
+    .with_offset(Vec2::new(0., 4.));
+
+    let bhandle = bodies.insert(body);
+    colliders
+        .insert(collider.build(bhandle), &mut bodies, &mut physics)
+        .unwrap()
 }
