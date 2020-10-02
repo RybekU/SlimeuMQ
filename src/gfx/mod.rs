@@ -5,19 +5,24 @@ use crate::phx::Position;
 use glam::Vec2;
 use legion::IntoQuery;
 use macroquad::{
-    clear_background, draw_texture_ex, set_camera, DrawTextureParams, Rect, Texture2D, GRAY, WHITE,
+    clear_background, draw_texture_ex, set_camera, DrawTextureParams, Rect, GRAY, WHITE,
 };
 
 pub struct Sprite {
     pub src: String,
+    /// area of the texture to be drawn
+    pub rect: Rect,
+    /// offset from the location given by Position component, by default the center
     pub offset: Vec2,
 }
 
 impl Sprite {
-    pub fn new(name: String, texture: &Texture2D) -> Self {
+    /// Offset is centered by default
+    pub fn new(name: String, x: f32, y: f32, width: f32, height: f32) -> Self {
         Self {
             src: name,
-            offset: -Vec2::new(texture.width(), texture.height()) / 2.,
+            rect: Rect::new(x, y, width, height),
+            offset: -Vec2::new(width, height) / 2.,
         }
     }
 }
@@ -29,14 +34,13 @@ pub fn render(game: &Game) {
     let mut query = <(&Position, &Sprite)>::query();
     for (position, sprite) in query.iter(&game.world) {
         let texture = game.textures.get(&sprite.src).unwrap();
-        // draw_texture(*texture, (position.src.x() + sprite.offset.x()), (position.src.y() + sprite.offset.y()), WHITE);
         draw_texture_ex(
             *texture,
             position.src.x() + sprite.offset.x(),
             position.src.y() + sprite.offset.y(),
             WHITE,
             DrawTextureParams {
-                source: Some(Rect::new(0., 0., 18., 18.)),
+                source: Some(sprite.rect),
                 ..Default::default()
             },
         );

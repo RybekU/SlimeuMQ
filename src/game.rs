@@ -48,13 +48,25 @@ impl Game {
             Position {
                 src: Vec2::new(10.0, 10.0),
             },
-            Sprite::new("slimeu_base".to_owned(), &texture),
+            Sprite::new(
+                "slimeu_base".to_owned(),
+                0.,
+                0.,
+                texture.width(),
+                texture.height(),
+            ),
         ));
         self.world.push((
             Position {
                 src: Vec2::new(30.0, 10.0),
             },
-            Sprite::new("slimeu_base".to_owned(), &texture),
+            Sprite::new(
+                "slimeu_base".to_owned(),
+                0.,
+                0.,
+                texture.width(),
+                texture.height(),
+            ),
             Velocity {
                 src: Vec2::new(0., 0.),
             },
@@ -65,7 +77,13 @@ impl Game {
             Position {
                 src: Vec2::new(50.0, 10.0),
             },
-            Sprite::new("slimeu_base".to_owned(), &texture),
+            Sprite::new(
+                "slimeu_base".to_owned(),
+                0.,
+                0.,
+                texture.width(),
+                texture.height(),
+            ),
         ));
     }
     pub fn update(&mut self) {
