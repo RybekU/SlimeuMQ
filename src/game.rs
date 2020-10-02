@@ -4,7 +4,7 @@ use legion::{
 };
 use macroquad::Texture2D;
 
-use crate::util::SimpleCam2D;
+use crate::util::{ButtonsState, SimpleCam2D};
 type ImageStorage = fxhash::FxHashMap<String, Texture2D>;
 
 pub struct Game {
@@ -34,6 +34,7 @@ impl Game {
     }
     pub async fn init(&mut self) {
         use crate::gfx::Sprite;
+        use crate::phx::temp::PlayerControlled;
         use crate::phx::{Gravity, Hitbox, Position, Velocity};
         use glam::Vec2;
 
@@ -72,6 +73,7 @@ impl Game {
             },
             Gravity::new(Vec2::new(0.0, 8.0)),
             Hitbox::new(makeshift_dynamic_collider(&self.resources)),
+            PlayerControlled {},
         ));
         self.world.push((
             Position {
@@ -87,6 +89,8 @@ impl Game {
         ));
     }
     pub fn update(&mut self) {
+        // input should be updated on the main thread
+        self.resources.get_mut::<ButtonsState>().unwrap().update();
         self.schedule.execute(&mut self.world, &mut self.resources);
     }
 }
@@ -96,15 +100,17 @@ fn init_resources() -> Resources {
     resources.insert(crate::phx::PhysicsWorld::new());
     resources.insert(crate::phx::BodySet::new());
     resources.insert(crate::phx::ColliderSet::new());
+    resources.insert(crate::util::ButtonsState::new());
     resources
 }
 
 fn init_schedule() -> Schedule {
     Schedule::builder()
         .add_system(crate::phx::gravity_system())
+        .add_system(crate::phx::temp::left_right_system(64., 0.4))
         .add_system(crate::phx::resphys_presync_system())
         .add_system(crate::phx::resphys_sync_system())
-        .add_system(crate::phx::reset_velocity_system())
+        .add_system(crate::phx::temp::reset_velocity_system())
         .build()
 }
 

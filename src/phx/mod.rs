@@ -1,6 +1,6 @@
 mod gravity;
 mod hitbox;
-mod temp;
+pub mod temp;
 
 use glam::Vec2;
 
