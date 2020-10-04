@@ -16,6 +16,7 @@ pub fn reset_velocity(#[resource] phys_world: &PhysicsWorld, hitbox: &Hitbox, ve
 pub struct PlayerControlled {}
 
 /// `accel` is a number from 0 to 1, 1 for instant max speed
+// FRAME_DEPENDANT
 #[system(for_each)]
 pub fn left_right(
     #[state] target_speed: &mut f32,
@@ -40,3 +41,9 @@ pub fn left_right(
         vel.src.set_y(-156.);
     }
 }
+
+// FRAME DEPENDANT possible change
+// modify all "multipliers" that accumulate over multiple frames to follow this model:
+// the same as the "pow" version of frame-indepentant variant but
+// speed *= exp2(frictionRate * deltaTime)
+// frictionRate = log2(friction)/originalFixedDeltaTime

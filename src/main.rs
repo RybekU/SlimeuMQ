@@ -23,10 +23,11 @@ async fn main() {
     game.init().await;
 
     let mut update_timer = util::Timer::with_fps(UPDATE_RATE);
+    let mut current_time;
     loop {
-        // handle events here
-
-        while update_timer.tick() {
+        // read time only once per frame
+        current_time = std::time::Instant::now();
+        while update_timer.tick(&current_time) {
             // execute schedule here
             game.update()
         }

@@ -13,8 +13,9 @@ impl Timer {
             last_update: Instant::now(),
         }
     }
-    pub fn tick(&mut self) -> bool {
-        if self.last_update.elapsed() > self.frametime {
+    // http://lspiroengine.com/?p=378
+    pub fn tick(&mut self, current_time: &Instant) -> bool {
+        if current_time.duration_since(self.last_update) > self.frametime {
             self.last_update += self.frametime;
             true
         } else {
