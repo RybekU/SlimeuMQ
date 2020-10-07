@@ -1,5 +1,6 @@
 use super::{Hitbox, PhysicsWorld, Velocity};
-use crate::util::{input::Button, ButtonsState};
+use crate::util::{input::Button, lerp, ButtonsState};
+use crate::FRAMETIME;
 use legion::system;
 
 #[system(for_each)]
@@ -18,22 +19,21 @@ pub struct PlayerControlled {}
 /// `accel` is a number from 0 to 1, 1 for instant max speed
 // FRAME_DEPENDANT
 #[system(for_each)]
-pub fn left_right(
-    #[state] target_speed: &mut f32,
-    #[state] accel: &mut f32,
-    #[resource] inputs: &ButtonsState,
-    vel: &mut Velocity,
-    _pc: &PlayerControlled,
-) {
-    let accel = *accel;
+pub fn left_right(#[resource] inputs: &ButtonsState, vel: &mut Velocity, _pc: &PlayerControlled) {
+    const TARGET_SPEED: f32 = 64.;
+    const ACCEL: f32 = 10.0;
     let target_speed = {
         let dir =
             (inputs.is_pressed(Button::Right) as i8) - (inputs.is_pressed(Button::Left) as i8);
-        *target_speed * dir as f32
+        TARGET_SPEED * dir as f32
     };
 
-    vel.src
-        .set_x(accel * target_speed + (1. - accel) * vel.src.x());
+    vel.src.set_x(lerp(
+        target_speed,
+        vel.src.x(),
+        f32::exp2(-ACCEL * FRAMETIME),
+    ));
+
     if vel.src.x().abs() < 1. {
         vel.src.set_x(0.);
     }

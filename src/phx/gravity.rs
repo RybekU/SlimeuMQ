@@ -1,4 +1,5 @@
 use crate::phx::Velocity;
+use crate::FRAMETIME;
 use glam::Vec2;
 use legion::system;
 
@@ -17,9 +18,11 @@ impl Gravity {
     }
 }
 
+// FRAME_DEPENDANT
+// https://answers.unity.com/questions/1528714/jump-not-framerate-independent.html
 #[system(for_each)]
 pub fn gravity(vel: &mut Velocity, gravity: &Gravity) {
     if gravity.enabled {
-        vel.src += gravity.strength;
+        vel.src += gravity.strength * FRAMETIME * 60.;
     }
 }

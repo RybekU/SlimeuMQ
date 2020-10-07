@@ -107,7 +107,7 @@ fn init_resources() -> Resources {
 fn init_schedule() -> Schedule {
     Schedule::builder()
         .add_system(crate::phx::gravity_system())
-        .add_system(crate::phx::temp::left_right_system(64., 0.4))
+        .add_system(crate::phx::temp::left_right_system())
         .add_system(crate::phx::resphys_presync_system())
         .add_system(crate::phx::resphys_sync_system())
         .add_system(crate::phx::temp::reset_velocity_system())
