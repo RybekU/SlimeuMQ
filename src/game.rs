@@ -1,3 +1,5 @@
+mod player;
+
 use legion::{
     systems::{Resources, Schedule},
     world::World,
@@ -33,8 +35,8 @@ impl Game {
         }
     }
     pub async fn init(&mut self) {
+        use self::player::PlayerControlled;
         use crate::gfx::Sprite;
-        use crate::phx::temp::PlayerControlled;
         use crate::phx::{Gravity, Hitbox, Position, Velocity};
         use glam::Vec2;
 
@@ -73,7 +75,7 @@ impl Game {
             },
             Gravity::new(Vec2::new(0.0, 8.0)),
             Hitbox::new(makeshift_dynamic_collider(&self.resources)),
-            PlayerControlled {},
+            PlayerControlled::new(),
         ));
         self.world.push((
             Position {
@@ -107,7 +109,7 @@ fn init_resources() -> Resources {
 fn init_schedule() -> Schedule {
     Schedule::builder()
         .add_system(crate::phx::gravity_system())
-        .add_system(crate::phx::temp::left_right_system())
+        .add_system(self::player::update_fsm_system())
         .add_system(crate::phx::resphys_presync_system())
         .add_system(crate::phx::resphys_sync_system())
         .add_system(crate::phx::temp::reset_velocity_system())
