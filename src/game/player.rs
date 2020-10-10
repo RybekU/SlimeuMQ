@@ -1,4 +1,4 @@
-use crate::phx::{Hitbox, PhysicsWorld, Velocity};
+use crate::phx::{OnGround, Velocity};
 use crate::util::{input::Button, lerp, ButtonsState};
 use crate::FRAMETIME;
 use legion::{component, system, world::SubWorld, Entity, EntityStore, IntoQuery};
@@ -19,6 +19,7 @@ impl PlayerControlled {
 #[system]
 #[write_component(Velocity)]
 #[write_component(PlayerControlled)]
+#[read_component(OnGround)]
 pub fn update_fsm(world: &mut SubWorld, #[resource] inputs: &ButtonsState) {
     let mut query = <(Entity, &mut PlayerControlled)>::query().filter(component::<Velocity>());
 
@@ -37,6 +38,8 @@ pub fn update_fsm(world: &mut SubWorld, #[resource] inputs: &ButtonsState) {
 enum PlayerState {
     Idle,
     Walking,
+    // bool - is_falling
+    InAir(bool),
 }
 
 impl PlayerState {
@@ -49,6 +52,7 @@ impl PlayerState {
         match self {
             Self::Idle => idle_update(entity, world, inputs),
             Self::Walking => walking_update(entity, world, inputs),
+            Self::InAir(data) => in_air_update(entity, world, data, inputs),
         }
     }
 }
@@ -61,10 +65,16 @@ fn idle_update(
 
     // TODO: add better error checks
     let mut entry = world.entry_mut(*entity).unwrap();
+    let on_ground = entry.get_component::<OnGround>().unwrap().on_ground;
     let vel = entry.get_component_mut::<Velocity>().unwrap();
 
+    handle_jump(inputs, vel);
+
+    if !on_ground {
+        return Some(PlayerState::InAir(vel.src.y() > 0.));
+    }
+
     if inputs.is_pressed(Button::Right) ^ inputs.is_pressed(Button::Left) {
-        log::debug!("To walking state");
         walking_update(entity, world, inputs);
         return Some(PlayerState::Walking);
     }
@@ -77,7 +87,6 @@ fn idle_update(
         vel.src.set_x(0.);
     }
 
-    check_jump(inputs, vel);
     None
 }
 
@@ -88,17 +97,19 @@ fn walking_update(
 ) -> Option<PlayerState> {
     const TARGET_SPEED: f32 = 64.;
     const ACCEL: f32 = 10.0;
-    let mut transition = None;
 
     // TODO: add better error checks
     let mut entry = world.entry_mut(*entity).unwrap();
+    let on_ground = entry.get_component::<OnGround>().unwrap().on_ground;
     let vel = entry.get_component_mut::<Velocity>().unwrap();
+
+    handle_jump(inputs, vel);
 
     let target_speed = {
         let dir =
             (inputs.is_pressed(Button::Right) as i8) - (inputs.is_pressed(Button::Left) as i8);
         if dir == 0 {
-            transition = Some(PlayerState::Idle);
+            return Some(PlayerState::Idle);
         }
         TARGET_SPEED * dir as f32
     };
@@ -111,19 +122,66 @@ fn walking_update(
 
     if vel.src.x().abs() < 1. {
         vel.src.set_x(0.);
+    };
+
+    if !on_ground {
+        return Some(PlayerState::InAir(vel.src.y() > 0.));
     }
-    check_jump(inputs, vel);
-    transition
+
+    None
 }
 
-fn check_jump(inputs: &ButtonsState, vel: &mut Velocity) {
+fn in_air_update(
+    entity: &Entity,
+    world: &mut SubWorld,
+    falling: &mut bool,
+    inputs: &ButtonsState,
+) -> Option<PlayerState> {
+    const TARGET_SPEED: f32 = 64.;
+    const ACCEL: f32 = 5.0;
+
+    // TODO: add better error checks
+    let mut entry = world.entry_mut(*entity).unwrap();
+    let on_ground = entry.get_component::<OnGround>().unwrap().on_ground;
+    let vel = entry.get_component_mut::<Velocity>().unwrap();
+
+    let target_speed = {
+        let dir =
+            (inputs.is_pressed(Button::Right) as i8) - (inputs.is_pressed(Button::Left) as i8);
+        TARGET_SPEED * dir as f32
+    };
+
+    vel.src.set_x(lerp(
+        target_speed,
+        vel.src.x(),
+        f32::exp2(-ACCEL * FRAMETIME),
+    ));
+
+    if vel.src.x().abs() < 1. {
+        vel.src.set_x(0.);
+    }
+
+    if on_ground {
+        if target_speed != 0. {
+            return Some(PlayerState::Idle);
+        } else {
+            return Some(PlayerState::Walking);
+        }
+    }
+
+    if *falling != (vel.src.y() > 0.) {
+        *falling = vel.src.y() > 0.;
+    }
+
+    None
+}
+
+fn handle_jump(inputs: &ButtonsState, vel: &mut Velocity) {
     if inputs.pressed(Button::Jump) {
         vel.src.set_y(-156.);
     }
 }
 
-// struct Rising{}
-// struct Falling{}
 // struct Attacking{}
 
 // update

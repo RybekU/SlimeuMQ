@@ -37,7 +37,7 @@ impl Game {
     pub async fn init(&mut self) {
         use self::player::PlayerControlled;
         use crate::gfx::Sprite;
-        use crate::phx::{Gravity, Hitbox, Position, Velocity};
+        use crate::phx::{Gravity, Hitbox, OnGround, Position, Velocity};
         use glam::Vec2;
 
         let texture: Texture2D = macroquad::load_texture("media/slimeu_base-b.png").await;
@@ -59,6 +59,7 @@ impl Game {
                 texture.height(),
             ),
         ));
+        let player_chandle = makeshift_dynamic_collider(&self.resources);
         self.world.push((
             Position {
                 src: Vec2::new(30.0, 10.0),
@@ -74,7 +75,8 @@ impl Game {
                 src: Vec2::new(0., 0.),
             },
             Gravity::new(Vec2::new(0.0, 8.0)),
-            Hitbox::new(makeshift_dynamic_collider(&self.resources)),
+            OnGround::new(&self.resources, player_chandle),
+            Hitbox::new(player_chandle),
             PlayerControlled::new(),
         ));
         self.world.push((
@@ -109,6 +111,7 @@ fn init_resources() -> Resources {
 fn init_schedule() -> Schedule {
     Schedule::builder()
         .add_system(crate::phx::gravity_system())
+        .add_system(crate::phx::ground_check_system())
         .add_system(self::player::update_fsm_system())
         .add_system(crate::phx::resphys_presync_system())
         .add_system(crate::phx::resphys_sync_system())
@@ -151,6 +154,7 @@ fn makeshift_dynamic_collider(resources: &Resources) -> resphys::ColliderHandle 
 
     let body = resphys::builder::BodyDesc::new()
         .with_position(Vec2::new(30., 10.))
+        .self_collision(false)
         .build();
     let collider = resphys::builder::ColliderDesc::new(
         resphys::AABB {
