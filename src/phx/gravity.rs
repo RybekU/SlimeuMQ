@@ -55,7 +55,8 @@ impl OnGround {
                 ColliderTag::Player,
             )
             .sensor()
-            .with_offset(offset);
+            .with_offset(offset)
+            .with_mask(super::Category::GROUND.bits());
             (sensor, checked_collider.owner)
         };
 

@@ -2,6 +2,7 @@ mod gravity;
 mod hitbox;
 pub mod temp;
 
+use bitflags::bitflags;
 use glam::Vec2;
 
 pub type PhysicsWorld = resphys::PhysicsWorld<ColliderTag>;
@@ -17,6 +18,16 @@ pub enum ColliderTag {
     Tile,
     Player,
     // Enemy,
+}
+
+bitflags! {
+    pub struct Category: u32 {
+        /// level geometry
+        const GROUND = 0b1 << 1;
+        /// player deserves his own category for interaction
+        const PLAYER = 0b1 << 2;
+        //const ENEMY = 0b1 << 3;
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

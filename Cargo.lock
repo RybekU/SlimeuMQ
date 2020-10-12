@@ -911,6 +911,7 @@ dependencies = [
 name = "slimeu-mq"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "enum-map",
  "fxhash",
  "glam",

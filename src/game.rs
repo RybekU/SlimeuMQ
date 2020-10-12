@@ -120,7 +120,7 @@ fn init_schedule() -> Schedule {
 }
 
 fn makeshift_static_platform(resources: &Resources) -> resphys::ColliderHandle {
-    use crate::phx::{BodySet, ColliderSet, ColliderTag, PhysicsWorld};
+    use crate::phx::{BodySet, Category, ColliderSet, ColliderTag, PhysicsWorld};
     use glam::Vec2;
 
     let mut physics = resources.get_mut::<PhysicsWorld>().unwrap();
@@ -136,7 +136,8 @@ fn makeshift_static_platform(resources: &Resources) -> resphys::ColliderHandle {
             half_exts: Vec2::new(60., 8.),
         },
         ColliderTag::Tile,
-    );
+    )
+    .with_category(Category::GROUND.bits());
 
     let bhandle = bodies.insert(body);
     colliders
@@ -145,7 +146,7 @@ fn makeshift_static_platform(resources: &Resources) -> resphys::ColliderHandle {
 }
 
 fn makeshift_dynamic_collider(resources: &Resources) -> resphys::ColliderHandle {
-    use crate::phx::{BodySet, ColliderSet, ColliderTag, PhysicsWorld};
+    use crate::phx::{BodySet, Category, ColliderSet, ColliderTag, PhysicsWorld};
     use glam::Vec2;
 
     let mut physics = resources.get_mut::<PhysicsWorld>().unwrap();
@@ -154,7 +155,7 @@ fn makeshift_dynamic_collider(resources: &Resources) -> resphys::ColliderHandle 
 
     let body = resphys::builder::BodyDesc::new()
         .with_position(Vec2::new(30., 10.))
-        .self_collision(false)
+        // .self_collision(false)
         .build();
     let collider = resphys::builder::ColliderDesc::new(
         resphys::AABB {
@@ -162,6 +163,8 @@ fn makeshift_dynamic_collider(resources: &Resources) -> resphys::ColliderHandle 
         },
         ColliderTag::Player,
     )
+    .with_category(Category::PLAYER.bits())
+    .with_mask(Category::GROUND.bits())
     .with_offset(Vec2::new(0., 4.));
 
     let bhandle = bodies.insert(body);
