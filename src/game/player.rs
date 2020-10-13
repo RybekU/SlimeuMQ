@@ -31,6 +31,7 @@ pub fn update_fsm(world: &mut SubWorld, #[resource] inputs: &ButtonsState) {
             .update(entity, &mut rest_world, inputs)
         {
             player_controlled.state = transition;
+            player_controlled.state.on_enter(entity, &mut rest_world);
         }
     }
 }
@@ -53,6 +54,13 @@ impl PlayerState {
             Self::Idle => idle_update(entity, world, inputs),
             Self::Walking => walking_update(entity, world, inputs),
             Self::InAir(data) => in_air_update(entity, world, data, inputs),
+        }
+    }
+    fn on_enter(&mut self, entity: &Entity, world: &mut SubWorld) {
+        match self {
+            Self::Idle => idle_on_enter(entity, world),
+            Self::Walking => walking_on_enter(entity, world),
+            Self::InAir(data) => in_air_on_enter(entity, world, data),
         }
     }
 }
@@ -88,6 +96,10 @@ fn idle_update(
     }
 
     None
+}
+
+fn idle_on_enter(_entity: &Entity, _world: &SubWorld) {
+    log::info!("Player idle");
 }
 
 fn walking_update(
@@ -131,6 +143,10 @@ fn walking_update(
     None
 }
 
+fn walking_on_enter(_entity: &Entity, _world: &SubWorld) {
+    log::info!("Player walking");
+}
+
 fn in_air_update(
     entity: &Entity,
     world: &mut SubWorld,
@@ -163,9 +179,9 @@ fn in_air_update(
 
     if on_ground {
         if target_speed != 0. {
-            return Some(PlayerState::Idle);
-        } else {
             return Some(PlayerState::Walking);
+        } else {
+            return Some(PlayerState::Idle);
         }
     }
 
@@ -176,15 +192,12 @@ fn in_air_update(
     None
 }
 
+fn in_air_on_enter(_entity: &Entity, _world: &SubWorld, _falling: &mut bool) {
+    log::info!("Player in air");
+}
+
 fn handle_jump(inputs: &ButtonsState, vel: &mut Velocity) {
     if inputs.pressed(Button::Jump) {
         vel.src.set_y(-156.);
     }
 }
-
-// struct Attacking{}
-
-// update
-// transition
-// on_enter
-// on_exit
