@@ -13,6 +13,7 @@ pub enum Button {
     Up,
     Down,
     Jump,
+    Attack,
 }
 
 // Reads the edge-based input and turn it into level-based.
@@ -28,6 +29,7 @@ impl Default for ButtonsState {
         bindings[Button::Down] = (Some(KeyCode::Down), 0);
         bindings[Button::Right] = (Some(KeyCode::Right), 0);
         bindings[Button::Jump] = (Some(KeyCode::Space), 0);
+        bindings[Button::Attack] = (Some(KeyCode::Z), 0);
         Self { bindings }
     }
 }
