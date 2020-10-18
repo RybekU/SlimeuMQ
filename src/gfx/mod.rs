@@ -59,4 +59,5 @@ pub fn render(game: &Game) {
         );
     }
     debug_info::visualize_hitboxes(&game.resources);
+    debug_info::visualize_hurtboxes(&game.resources);
 }
