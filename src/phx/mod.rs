@@ -26,7 +26,7 @@ bitflags! {
         const GROUND = 0b1 << 1;
         /// player deserves his own category for interaction
         const PLAYER = 0b1 << 2;
-        //const ENEMY = 0b1 << 3;
+        const ENEMY = 0b1 << 3;
     }
 }
 

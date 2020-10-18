@@ -1,7 +1,9 @@
+use crate::game::combat::{HurtInfo, HurtQueue};
 use crate::gfx::Sprite;
-use crate::phx::{OnGround, Velocity};
+use crate::phx::{OnGround, Position, Velocity};
 use crate::util::{input::Button, lerp, ButtonsState};
 use crate::FRAMETIME;
+use glam::Vec2;
 use legion::{component, system, world::SubWorld, Entity, EntityStore, IntoQuery};
 
 pub struct PlayerControlled {
@@ -16,24 +18,39 @@ impl PlayerControlled {
     }
 }
 
+struct ResourceRefs<'a> {
+    pub inputs: &'a ButtonsState,
+    pub hurt_queue: &'a mut HurtQueue,
+}
+
 // FRAME_DEPENDANT
 #[system]
 #[write_component(Velocity)]
 #[write_component(PlayerControlled)]
 #[write_component(Sprite)]
 #[read_component(OnGround)]
-pub fn update_fsm(world: &mut SubWorld, #[resource] inputs: &ButtonsState) {
+#[read_component(Position)]
+pub fn update_fsm(
+    world: &mut SubWorld,
+    #[resource] hurt_queue: &mut HurtQueue,
+    #[resource] inputs: &ButtonsState,
+) {
     let mut query = <(Entity, &mut PlayerControlled)>::query().filter(component::<Velocity>());
+
+    let mut resources = ResourceRefs { inputs, hurt_queue };
 
     let (mut pc_world, mut rest_world) = world.split_for_query(&query);
 
     for (entity, player_controlled) in query.iter_mut(&mut pc_world) {
-        if let Some(transition) = player_controlled
-            .state
-            .update(entity, &mut rest_world, inputs)
+        if let Some(transition) =
+            player_controlled
+                .state
+                .update(entity, &mut rest_world, &resources)
         {
             player_controlled.state = transition;
-            player_controlled.state.on_enter(entity, &mut rest_world);
+            player_controlled
+                .state
+                .on_enter(entity, &mut rest_world, &mut resources);
         }
     }
 }
@@ -51,30 +68,32 @@ impl PlayerState {
         &mut self,
         entity: &Entity,
         world: &mut SubWorld,
-        inputs: &ButtonsState,
+        resources: &ResourceRefs,
     ) -> Option<Self> {
         match self {
-            Self::Idle => idle_update(entity, world, inputs),
-            Self::Walk => walk_update(entity, world, inputs),
-            Self::InAir(data) => in_air_update(entity, world, data, inputs),
-            Self::Attack(data) => attack_update(entity, world, data, inputs),
+            Self::Idle => idle_update(entity, world, resources),
+            Self::Walk => walk_update(entity, world, resources),
+            Self::InAir(data) => in_air_update(entity, world, data, resources),
+            Self::Attack(data) => attack_update(entity, world, data, resources),
         }
     }
-    fn on_enter(&mut self, entity: &Entity, world: &mut SubWorld) {
+    fn on_enter(&mut self, entity: &Entity, world: &mut SubWorld, resources: &mut ResourceRefs) {
         match self {
             Self::Idle => idle_on_enter(entity, world),
             Self::Walk => walk_on_enter(entity, world),
             Self::InAir(data) => in_air_on_enter(entity, world, data),
-            Self::Attack(_data) => attack_on_enter(entity, world),
+            Self::Attack(_data) => attack_on_enter(entity, world, resources),
         }
     }
 }
 fn idle_update(
     entity: &Entity,
     world: &mut SubWorld,
-    inputs: &ButtonsState,
+    resources: &ResourceRefs,
 ) -> Option<PlayerState> {
     const DECEL: f32 = 20.0;
+
+    let inputs = resources.inputs;
 
     // TODO: add better error checks
     let mut entry = world.entry_mut(*entity).unwrap();
@@ -92,7 +111,7 @@ fn idle_update(
     }
 
     if inputs.is_pressed(Button::Right) ^ inputs.is_pressed(Button::Left) {
-        walk_update(entity, world, inputs);
+        walk_update(entity, world, resources);
         return Some(PlayerState::Walk);
     }
 
@@ -114,10 +133,12 @@ fn idle_on_enter(_entity: &Entity, _world: &SubWorld) {
 fn walk_update(
     entity: &Entity,
     world: &mut SubWorld,
-    inputs: &ButtonsState,
+    resources: &ResourceRefs,
 ) -> Option<PlayerState> {
     const TARGET_SPEED: f32 = 64.;
     const ACCEL: f32 = 10.0;
+
+    let inputs = resources.inputs;
 
     // TODO: add better error checks
     let (vel, on_ground, sprite) = <(&mut Velocity, &OnGround, &mut Sprite)>::query()
@@ -176,10 +197,12 @@ fn in_air_update(
     entity: &Entity,
     world: &mut SubWorld,
     falling: &mut bool,
-    inputs: &ButtonsState,
+    resources: &ResourceRefs,
 ) -> Option<PlayerState> {
     const TARGET_SPEED: f32 = 64.;
     const ACCEL: f32 = 5.0;
+
+    let inputs = resources.inputs;
 
     // TODO: add better error checks
     let mut entry = world.entry_mut(*entity).unwrap();
@@ -229,7 +252,7 @@ fn attack_update(
     entity: &Entity,
     world: &mut SubWorld,
     cd: &mut f32,
-    _inputs: &ButtonsState,
+    _resources: &ResourceRefs,
 ) -> Option<PlayerState> {
     const LAND_DECEL: f32 = 10.;
     const AIR_DECEL: f32 = 5.;
@@ -255,8 +278,26 @@ fn attack_update(
     None
 }
 
-fn attack_on_enter(_entity: &Entity, _world: &SubWorld) {
+fn attack_on_enter(entity: &Entity, world: &mut SubWorld, resources: &mut ResourceRefs) {
     log::info!("Player attacks");
+
+    let (position, sprite) = <(&Position, &Sprite)>::query()
+        .get_mut(world, *entity)
+        .unwrap();
+
+    let offset = if sprite.flip { -16. } else { 16. };
+
+    let hurtbox = position.src + Vec2::new(offset, 0.);
+    let half_exts = Vec2::new(8., 4.);
+
+    let hurt_info = HurtInfo {
+        attacker: *entity,
+        position: hurtbox,
+        half_exts,
+        mask: crate::phx::Category::ENEMY.bits(),
+    };
+
+    resources.hurt_queue.push(hurt_info);
 }
 
 fn handle_jump(inputs: &ButtonsState, vel: &mut Velocity) {
@@ -266,8 +307,8 @@ fn handle_jump(inputs: &ButtonsState, vel: &mut Velocity) {
 }
 
 fn handle_attack(inputs: &ButtonsState) -> Option<PlayerState> {
-    if inputs.is_pressed(Button::Attack) {
-        Some(PlayerState::Attack(0.5))
+    if inputs.pressed(Button::Attack) {
+        Some(PlayerState::Attack(0.1))
     } else {
         None
     }

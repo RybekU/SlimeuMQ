@@ -1,3 +1,4 @@
+pub mod combat;
 mod player;
 
 use legion::{
@@ -105,6 +106,7 @@ fn init_resources() -> Resources {
     resources.insert(crate::phx::BodySet::new());
     resources.insert(crate::phx::ColliderSet::new());
     resources.insert(crate::util::ButtonsState::new());
+    resources.insert(crate::game::combat::HurtQueue::new());
     resources
 }
 
@@ -115,6 +117,7 @@ fn init_schedule() -> Schedule {
         .add_system(self::player::update_fsm_system())
         .add_system(crate::phx::resphys_presync_system())
         .add_system(crate::phx::resphys_sync_system())
+        .add_system(crate::game::combat::spread_pain_system())
         .add_system(crate::phx::temp::reset_velocity_system())
         .build()
 }
