@@ -1,3 +1,4 @@
+mod ai;
 pub mod combat;
 mod player;
 
@@ -36,6 +37,7 @@ impl Game {
         }
     }
     pub async fn init(&mut self) {
+        use self::ai::AiControlled;
         use self::player::PlayerControlled;
         use crate::gfx::Sprite;
         use crate::phx::{Gravity, Hitbox, OnGround, Position, Velocity};
@@ -60,8 +62,9 @@ impl Game {
                 texture.height(),
             ),
         ));
-        let player_chandle = makeshift_dynamic_collider(&self.resources);
-        self.world.push((
+
+        let (player_bhandle, player_chandle) = makeshift_player_dynamic_collider(&self.resources);
+        let player_entity = self.world.push((
             Position {
                 src: Vec2::new(30.0, 10.0),
             },
@@ -80,7 +83,9 @@ impl Game {
             Hitbox::new(player_chandle),
             PlayerControlled::new(),
         ));
-        self.world.push((
+
+        let (enemy_bhandle, enemy_chandle) = makeshift_enemy_dynamic_collider(&self.resources);
+        let enemy_entity = self.world.push((
             Position {
                 src: Vec2::new(50.0, 10.0),
             },
@@ -91,7 +96,19 @@ impl Game {
                 texture.width(),
                 texture.height(),
             ),
+            Velocity {
+                src: Vec2::new(0., 0.),
+            },
+            Gravity::new(Vec2::new(0.0, 8.0)),
+            Hitbox::new(enemy_chandle),
+            AiControlled::new(),
         ));
+        let mut body_entity_map = self
+            .resources
+            .get_mut::<crate::phx::BodyEntityMap>()
+            .unwrap();
+        body_entity_map.insert(player_bhandle, player_entity);
+        body_entity_map.insert(enemy_bhandle, enemy_entity);
     }
     pub fn update(&mut self) {
         // input should be updated on the main thread
@@ -106,7 +123,10 @@ fn init_resources() -> Resources {
     resources.insert(crate::phx::BodySet::new());
     resources.insert(crate::phx::ColliderSet::new());
     resources.insert(crate::util::ButtonsState::new());
+    // TODO: Remove HurtQueue after replacing it with sensor hitbox
     resources.insert(crate::game::combat::HurtQueue::new());
+    resources.insert(crate::game::combat::DamageQueue::new());
+    resources.insert(crate::phx::BodyEntityMap::default());
     resources
 }
 
@@ -118,6 +138,7 @@ fn init_schedule() -> Schedule {
         .add_system(crate::phx::resphys_presync_system())
         .add_system(crate::phx::resphys_sync_system())
         .add_system(crate::game::combat::spread_pain_system())
+        .add_system(crate::game::combat::apply_damage_system())
         .add_system(crate::phx::temp::reset_velocity_system())
         .build()
 }
@@ -148,7 +169,9 @@ fn makeshift_static_platform(resources: &Resources) -> resphys::ColliderHandle {
         .unwrap()
 }
 
-fn makeshift_dynamic_collider(resources: &Resources) -> resphys::ColliderHandle {
+fn makeshift_player_dynamic_collider(
+    resources: &Resources,
+) -> (resphys::BodyHandle, resphys::ColliderHandle) {
     use crate::phx::{BodySet, Category, ColliderSet, ColliderTag, PhysicsWorld};
     use glam::Vec2;
 
@@ -171,7 +194,43 @@ fn makeshift_dynamic_collider(resources: &Resources) -> resphys::ColliderHandle 
     .with_offset(Vec2::new(0., 4.));
 
     let bhandle = bodies.insert(body);
-    colliders
-        .insert(collider.build(bhandle), &mut bodies, &mut physics)
-        .unwrap()
+    (
+        bhandle,
+        colliders
+            .insert(collider.build(bhandle), &mut bodies, &mut physics)
+            .unwrap(),
+    )
+}
+
+fn makeshift_enemy_dynamic_collider(
+    resources: &Resources,
+) -> (resphys::BodyHandle, resphys::ColliderHandle) {
+    use crate::phx::{BodySet, Category, ColliderSet, ColliderTag, PhysicsWorld};
+    use glam::Vec2;
+
+    let mut physics = resources.get_mut::<PhysicsWorld>().unwrap();
+    let mut bodies = resources.get_mut::<BodySet>().unwrap();
+    let mut colliders = resources.get_mut::<ColliderSet>().unwrap();
+
+    let body = resphys::builder::BodyDesc::new()
+        .with_position(Vec2::new(30., 10.))
+        // .self_collision(false)
+        .build();
+    let collider = resphys::builder::ColliderDesc::new(
+        resphys::AABB {
+            half_exts: Vec2::new(5., 4.),
+        },
+        ColliderTag::Player,
+    )
+    .with_category(Category::ENEMY.bits())
+    .with_mask(Category::GROUND.bits())
+    .with_offset(Vec2::new(0., 4.));
+
+    let bhandle = bodies.insert(body);
+    (
+        bhandle,
+        colliders
+            .insert(collider.build(bhandle), &mut bodies, &mut physics)
+            .unwrap(),
+    )
 }
