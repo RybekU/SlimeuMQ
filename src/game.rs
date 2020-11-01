@@ -37,7 +37,7 @@ impl Game {
         }
     }
     pub async fn init(&mut self) {
-        use self::ai::AiControlled;
+        use self::ai::{AiControlled, HitMemory};
         use self::player::PlayerControlled;
         use crate::gfx::Sprite;
         use crate::phx::{Gravity, Hitbox, OnGround, Position, Velocity};
@@ -102,6 +102,7 @@ impl Game {
             Gravity::new(Vec2::new(0.0, 8.0)),
             Hitbox::new(enemy_chandle),
             AiControlled::new(),
+            HitMemory::new(),
         ));
         let mut body_entity_map = self
             .resources
@@ -135,6 +136,7 @@ fn init_schedule() -> Schedule {
         .add_system(crate::phx::gravity_system())
         .add_system(crate::phx::ground_check_system())
         .add_system(self::player::update_fsm_system())
+        .add_system(self::ai::update_fsm_system())
         .add_system(crate::phx::resphys_presync_system())
         .add_system(crate::phx::resphys_sync_system())
         .add_system(crate::game::combat::spread_pain_system())

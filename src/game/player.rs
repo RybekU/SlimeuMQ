@@ -23,7 +23,6 @@ struct ResourceRefs<'a> {
     pub hurt_queue: &'a mut HurtQueue,
 }
 
-// FRAME_DEPENDANT
 #[system]
 #[write_component(Velocity)]
 #[write_component(PlayerControlled)]

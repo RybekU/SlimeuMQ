@@ -1,7 +1,8 @@
+use super::ai::{AiControlled, HitMemory};
 use super::player::PlayerControlled;
 use crate::phx::{BodySet, ColliderSet, PhysicsWorld};
 use glam::Vec2;
-use legion::{system, Entity};
+use legion::{system, world::SubWorld, Entity, IntoQuery};
 
 // Treat things that just react on getting hit (change direction, disappear) in a different way to things that actually have some sort of HP
 // ^ the above statement is not a decision set in stone yet
@@ -35,9 +36,11 @@ impl DamageQueue {
 
 #[system]
 #[write_component(PlayerControlled)]
+#[write_component(AiControlled)]
 #[write_component(Vitality)]
+#[write_component(HitMemory)]
 // #[write_component(AIControlled)]
-pub fn apply_damage(#[resource] damage_queue: &mut DamageQueue) {
+pub fn apply_damage(world: &mut SubWorld, #[resource] damage_queue: &mut DamageQueue) {
     // get input's damage
     // get output's vitality
     for DamageEvent { input, output } in &damage_queue.events {
@@ -45,7 +48,10 @@ pub fn apply_damage(#[resource] damage_queue: &mut DamageQueue) {
             "A DamageEvent arrived succesfully from {:?} and hit {:?}",
             input,
             output
-        )
+        );
+        if let Ok(HitMemory(hit_state)) = <&mut HitMemory>::query().get_mut(world, *output) {
+            *hit_state = true;
+        }
     }
 
     damage_queue.events.clear();
