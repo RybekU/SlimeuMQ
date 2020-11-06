@@ -132,7 +132,7 @@ fn init_resources() -> Resources {
 }
 
 fn init_schedule() -> Schedule {
-    Schedule::builder()
+    add_effect_systems(&mut Schedule::builder())
         .add_system(crate::phx::gravity_system())
         .add_system(crate::phx::ground_check_system())
         .add_system(self::player::update_fsm_system())
@@ -143,6 +143,12 @@ fn init_schedule() -> Schedule {
         .add_system(crate::game::combat::apply_damage_system())
         .add_system(crate::phx::temp::reset_velocity_system())
         .build()
+}
+
+fn add_effect_systems(builder: &mut legion::systems::Builder) -> &mut legion::systems::Builder {
+    builder
+        .add_system(crate::effect::effect_update_system())
+        .add_system(crate::effect::tint::tint_system())
 }
 
 fn makeshift_static_platform(resources: &Resources) -> resphys::ColliderHandle {

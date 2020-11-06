@@ -5,7 +5,7 @@ use crate::phx::Position;
 use glam::Vec2;
 use legion::IntoQuery;
 use macroquad::{
-    clear_background, draw_texture_ex, set_camera, DrawTextureParams, Rect, GRAY, WHITE,
+    clear_background, draw_texture_ex, set_camera, Color, DrawTextureParams, Rect, GRAY, WHITE,
 };
 
 pub struct Sprite {
@@ -14,6 +14,8 @@ pub struct Sprite {
     pub rect: Rect,
     /// offset from the location given by Position component, by default the center
     pub offset: Vec2,
+    /// white for default
+    pub color: Color,
     /// if true sprite faces left
     pub flip: bool,
 }
@@ -25,6 +27,7 @@ impl Sprite {
             src: name,
             rect: Rect::new(x, y, width, height),
             offset: -Vec2::new(width, height) / 2.,
+            color: WHITE,
             flip: false,
         }
     }
@@ -51,7 +54,7 @@ pub fn render(game: &Game) {
             *texture,
             position.src.x() + sprite.offset.x(),
             position.src.y() + sprite.offset.y(),
-            WHITE,
+            sprite.color,
             DrawTextureParams {
                 source: Some(rect),
                 ..Default::default()

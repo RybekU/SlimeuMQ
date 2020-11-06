@@ -1,8 +1,9 @@
 use super::ai::{AiControlled, HitMemory};
 use super::player::PlayerControlled;
+use crate::effect::{tint::TintChange, EffectData};
 use crate::phx::{BodySet, ColliderSet, PhysicsWorld};
 use glam::Vec2;
-use legion::{system, world::SubWorld, Entity, IntoQuery};
+use legion::{system, systems::CommandBuffer, world::SubWorld, Entity, IntoQuery};
 
 // Treat things that just react on getting hit (change direction, disappear) in a different way to things that actually have some sort of HP
 // ^ the above statement is not a decision set in stone yet
@@ -39,22 +40,30 @@ impl DamageQueue {
 #[write_component(AiControlled)]
 #[write_component(Vitality)]
 #[write_component(HitMemory)]
-// #[write_component(AIControlled)]
-pub fn apply_damage(world: &mut SubWorld, #[resource] damage_queue: &mut DamageQueue) {
+pub fn apply_damage(
+    world: &mut SubWorld,
+    command_buffer: &mut CommandBuffer,
+    #[resource] damage_queue: &mut DamageQueue,
+) {
     // get input's damage
     // get output's vitality
-    for DamageEvent { input, output } in &damage_queue.events {
+    for DamageEvent { input, output } in damage_queue.events.drain(..) {
         log::debug!(
             "A DamageEvent arrived succesfully from {:?} and hit {:?}",
             input,
             output
         );
-        if let Ok(HitMemory(hit_state)) = <&mut HitMemory>::query().get_mut(world, *output) {
+        if let Ok(HitMemory(hit_state)) = <&mut HitMemory>::query().get_mut(world, output) {
             *hit_state = true;
+            command_buffer.push((
+                EffectData {
+                    parent: output,
+                    duration: 0.15,
+                },
+                TintChange::new(macroquad::Color([255, 36, 0, 192])),
+            ));
         }
     }
-
-    damage_queue.events.clear();
 }
 // TODO: Scrap below in favor of persistent toggleable hitbox in physics engine
 
