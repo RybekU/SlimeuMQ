@@ -41,12 +41,7 @@ pub fn render(game: &Game) {
     for (position, sprite) in query.iter(&game.world) {
         let texture = game.textures.get(&sprite.src).unwrap();
         let rect = if sprite.flip {
-            Rect::new(
-                sprite.rect.x + sprite.rect.w,
-                sprite.rect.y,
-                -sprite.rect.w,
-                sprite.rect.h,
-            )
+            Rect::new(sprite.rect.x + sprite.rect.w, sprite.rect.y, -sprite.rect.w, sprite.rect.h)
         } else {
             sprite.rect
         };
@@ -55,10 +50,7 @@ pub fn render(game: &Game) {
             position.src.x() + sprite.offset.x(),
             position.src.y() + sprite.offset.y(),
             sprite.color,
-            DrawTextureParams {
-                source: Some(rect),
-                ..Default::default()
-            },
+            DrawTextureParams { source: Some(rect), ..Default::default() },
         );
     }
     debug_info::visualize_hitboxes(&game.resources);

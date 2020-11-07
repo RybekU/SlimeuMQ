@@ -13,11 +13,7 @@ pub struct TintChange {
 
 impl TintChange {
     pub fn new(on_creation: Color) -> Self {
-        Self {
-            on_creation,
-            on_deletion: WHITE,
-            new: true,
-        }
+        Self { on_creation, on_deletion: WHITE, new: true }
     }
 }
 

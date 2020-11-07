@@ -9,20 +9,13 @@ pub struct SimpleCam2D {
 
 impl Default for SimpleCam2D {
     fn default() -> SimpleCam2D {
-        SimpleCam2D {
-            zoom: 1.0,
-            target: Vec2::zero(),
-            rotation: 0.,
-        }
+        SimpleCam2D { zoom: 1.0, target: Vec2::zero(), rotation: 0. }
     }
 }
 
 impl SimpleCam2D {
     pub fn with_zoom(zoom: f32) -> Self {
-        SimpleCam2D {
-            zoom,
-            ..Default::default()
-        }
+        SimpleCam2D { zoom, ..Default::default() }
     }
 }
 

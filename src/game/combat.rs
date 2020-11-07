@@ -19,10 +19,7 @@ pub struct CombatStats {
 
 impl CombatStats {
     pub fn new() -> Self {
-        Self {
-            kb_force: Vec2::new(64., -64.),
-            kb_res: 0.5,
-        }
+        Self { kb_force: Vec2::new(64., -64.), kb_res: 0.5 }
     }
 }
 
@@ -38,9 +35,7 @@ pub struct DamageQueue {
 
 impl DamageQueue {
     pub fn new() -> Self {
-        Self {
-            events: Vec::with_capacity(128),
-        }
+        Self { events: Vec::with_capacity(128) }
     }
     pub fn push(&mut self, damage_event: DamageEvent) {
         self.events.push(damage_event);
@@ -61,11 +56,7 @@ pub fn apply_damage(
     // get input's damage
     // get output's CombatStats
     for DamageEvent { input, output } in damage_queue.events.drain(..) {
-        log::debug!(
-            "A DamageEvent arrived succesfully from {:?} and hit {:?}",
-            input,
-            output
-        );
+        log::debug!("A DamageEvent arrived succesfully from {:?} and hit {:?}", input, output);
 
         let maybe_off_combat = <&CombatStats>::query().get(world, input).ok().cloned();
         if let Ok((maybe_hit_memory, maybe_velocity, def_combat)) =
@@ -88,10 +79,7 @@ pub fn apply_damage(
             }
 
             command_buffer.push((
-                EffectData {
-                    parent: output,
-                    duration: 0.15,
-                },
+                EffectData { parent: output, duration: 0.15 },
                 TintChange::new(macroquad::Color([255, 36, 0, 192])),
             ));
         }
@@ -121,10 +109,7 @@ pub struct HurtQueue {
 
 impl HurtQueue {
     pub fn new() -> Self {
-        Self {
-            msgs: Vec::with_capacity(128),
-            copy_msgs: Vec::with_capacity(128),
-        }
+        Self { msgs: Vec::with_capacity(128), copy_msgs: Vec::with_capacity(128) }
     }
     pub fn push(&mut self, hurt_info: HurtInfo) {
         self.msgs.push(hurt_info);
@@ -153,10 +138,7 @@ pub fn spread_pain(
         );
         for chandle in hits {
             if let Some(defender) = body_entity_map.get(&colliders[chandle].owner) {
-                damage_queue.push(DamageEvent {
-                    input: hurt_info.attacker,
-                    output: *defender,
-                });
+                damage_queue.push(DamageEvent { input: hurt_info.attacker, output: *defender });
             }
         }
     }

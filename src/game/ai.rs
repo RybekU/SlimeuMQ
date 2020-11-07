@@ -21,9 +21,7 @@ impl HitMemory {
 
 impl AiControlled {
     pub fn new() -> Self {
-        Self {
-            state: AiState::Idle,
-        }
+        Self { state: AiState::Idle }
     }
 }
 
@@ -49,14 +47,9 @@ pub fn update_fsm(world: &mut SubWorld) {
     let (mut ac_world, mut rest_world) = world.split_for_query(&query);
 
     for (entity, ai_controlled) in query.iter_mut(&mut ac_world) {
-        if let Some(transition) = ai_controlled
-            .state
-            .update(entity, &mut rest_world, &resources)
-        {
+        if let Some(transition) = ai_controlled.state.update(entity, &mut rest_world, &resources) {
             ai_controlled.state = transition;
-            ai_controlled
-                .state
-                .on_enter(entity, &mut rest_world, &mut resources);
+            ai_controlled.state.on_enter(entity, &mut rest_world, &mut resources);
         }
     }
 }
@@ -88,9 +81,8 @@ fn idle_update(
 ) -> Option<AiState> {
     const DECEL: f32 = 20.;
 
-    let (HitMemory(is_hit), Velocity { src: vel }) = <(&mut HitMemory, &mut Velocity)>::query()
-        .get_mut(world, *entity)
-        .unwrap();
+    let (HitMemory(is_hit), Velocity { src: vel }) =
+        <(&mut HitMemory, &mut Velocity)>::query().get_mut(world, *entity).unwrap();
 
     vel.set_x(lerp(0., vel.x(), f32::exp2(-DECEL * FRAMETIME)));
 
@@ -118,9 +110,8 @@ fn hurt_update(
 ) -> Option<AiState> {
     const DECEL: f32 = 10.0;
 
-    let (HitMemory(is_hit), Velocity { src: vel }) = <(&mut HitMemory, &mut Velocity)>::query()
-        .get_mut(world, *entity)
-        .unwrap();
+    let (HitMemory(is_hit), Velocity { src: vel }) =
+        <(&mut HitMemory, &mut Velocity)>::query().get_mut(world, *entity).unwrap();
     *is_hit = false;
 
     *timer -= FRAMETIME;

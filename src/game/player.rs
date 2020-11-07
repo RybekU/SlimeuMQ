@@ -12,9 +12,7 @@ pub struct PlayerControlled {
 
 impl PlayerControlled {
     pub fn new() -> Self {
-        Self {
-            state: PlayerState::Idle,
-        }
+        Self { state: PlayerState::Idle }
     }
 }
 
@@ -42,14 +40,10 @@ pub fn update_fsm(
 
     for (entity, player_controlled) in query.iter_mut(&mut pc_world) {
         if let Some(transition) =
-            player_controlled
-                .state
-                .update(entity, &mut rest_world, &resources)
+            player_controlled.state.update(entity, &mut rest_world, &resources)
         {
             player_controlled.state = transition;
-            player_controlled
-                .state
-                .on_enter(entity, &mut rest_world, &mut resources);
+            player_controlled.state.on_enter(entity, &mut rest_world, &mut resources);
         }
     }
 }
@@ -115,8 +109,7 @@ fn idle_update(
     }
 
     // decelerate quickly when no input is given
-    vel.src
-        .set_x(lerp(0., vel.src.x(), f32::exp2(-DECEL * FRAMETIME)));
+    vel.src.set_x(lerp(0., vel.src.x(), f32::exp2(-DECEL * FRAMETIME)));
 
     if vel.src.x().abs() < 1. {
         vel.src.set_x(0.);
@@ -140,9 +133,8 @@ fn walk_update(
     let inputs = resources.inputs;
 
     // TODO: add better error checks
-    let (vel, on_ground, sprite) = <(&mut Velocity, &OnGround, &mut Sprite)>::query()
-        .get_mut(world, *entity)
-        .unwrap();
+    let (vel, on_ground, sprite) =
+        <(&mut Velocity, &OnGround, &mut Sprite)>::query().get_mut(world, *entity).unwrap();
     let flipped = &mut sprite.flip;
     let on_ground = on_ground.on_ground;
 
@@ -162,20 +154,13 @@ fn walk_update(
     };
 
     // flip sprite if necessary
-    *flipped = match (
-        inputs.is_pressed(Button::Left),
-        inputs.is_pressed(Button::Right),
-    ) {
+    *flipped = match (inputs.is_pressed(Button::Left), inputs.is_pressed(Button::Right)) {
         (true, false) => true,
         (false, true) => false,
         _ => *flipped,
     };
 
-    vel.src.set_x(lerp(
-        target_speed,
-        vel.src.x(),
-        f32::exp2(-ACCEL * FRAMETIME),
-    ));
+    vel.src.set_x(lerp(target_speed, vel.src.x(), f32::exp2(-ACCEL * FRAMETIME)));
 
     if vel.src.x().abs() < 1. {
         vel.src.set_x(0.);
@@ -214,11 +199,7 @@ fn in_air_update(
         TARGET_SPEED * dir as f32
     };
 
-    vel.src.set_x(lerp(
-        target_speed,
-        vel.src.x(),
-        f32::exp2(-ACCEL * FRAMETIME),
-    ));
+    vel.src.set_x(lerp(target_speed, vel.src.x(), f32::exp2(-ACCEL * FRAMETIME)));
 
     if vel.src.x().abs() < 1. {
         vel.src.set_x(0.);
@@ -257,15 +238,12 @@ fn attack_update(
     const AIR_DECEL: f32 = 5.;
     *cd -= FRAMETIME;
 
-    let (vel, on_ground) = <(&mut Velocity, &OnGround)>::query()
-        .get_mut(world, *entity)
-        .unwrap();
+    let (vel, on_ground) = <(&mut Velocity, &OnGround)>::query().get_mut(world, *entity).unwrap();
     let on_ground = on_ground.on_ground;
 
     let decel = if on_ground { LAND_DECEL } else { AIR_DECEL };
 
-    vel.src
-        .set_x(lerp(0., vel.src.x(), f32::exp2(-decel * FRAMETIME)));
+    vel.src.set_x(lerp(0., vel.src.x(), f32::exp2(-decel * FRAMETIME)));
 
     if vel.src.x().abs() < 1. {
         vel.src.set_x(0.);
@@ -280,9 +258,7 @@ fn attack_update(
 fn attack_on_enter(entity: &Entity, world: &mut SubWorld, resources: &mut ResourceRefs) {
     log::info!("Player attacks");
 
-    let (position, sprite) = <(&Position, &Sprite)>::query()
-        .get_mut(world, *entity)
-        .unwrap();
+    let (position, sprite) = <(&Position, &Sprite)>::query().get_mut(world, *entity).unwrap();
 
     let offset = if sprite.flip { -16. } else { 16. };
 

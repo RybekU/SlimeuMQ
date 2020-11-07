@@ -28,13 +28,7 @@ impl Game {
 
         let images = ImageStorage::default();
         let camera = SimpleCam2D::with_zoom(crate::GAME_SCALE as f32);
-        Self {
-            world,
-            resources,
-            schedule,
-            textures: images,
-            camera,
-        }
+        Self { world, resources, schedule, textures: images, camera }
     }
     pub async fn init(&mut self) {
         use self::ai::{AiControlled, HitMemory};
@@ -49,36 +43,17 @@ impl Game {
 
         self.textures.insert("slimeu_base".into(), texture);
 
-        self.world
-            .push((Hitbox::new(makeshift_static_platform(&self.resources)),));
+        self.world.push((Hitbox::new(makeshift_static_platform(&self.resources)),));
         self.world.push((
-            Position {
-                src: Vec2::new(10.0, 10.0),
-            },
-            Sprite::new(
-                "slimeu_base".to_owned(),
-                0.,
-                0.,
-                texture.width(),
-                texture.height(),
-            ),
+            Position { src: Vec2::new(10.0, 10.0) },
+            Sprite::new("slimeu_base".to_owned(), 0., 0., texture.width(), texture.height()),
         ));
 
         let (player_bhandle, player_chandle) = makeshift_player_dynamic_collider(&self.resources);
         let player_entity = self.world.push((
-            Position {
-                src: Vec2::new(30.0, 10.0),
-            },
-            Sprite::new(
-                "slimeu_base".to_owned(),
-                0.,
-                0.,
-                texture.width(),
-                texture.height(),
-            ),
-            Velocity {
-                src: Vec2::new(0., 0.),
-            },
+            Position { src: Vec2::new(30.0, 10.0) },
+            Sprite::new("slimeu_base".to_owned(), 0., 0., texture.width(), texture.height()),
+            Velocity { src: Vec2::new(0., 0.) },
             Gravity::new(Vec2::new(0.0, 8.0)),
             OnGround::new(&self.resources, player_chandle),
             Hitbox::new(player_chandle),
@@ -88,29 +63,16 @@ impl Game {
 
         let (enemy_bhandle, enemy_chandle) = makeshift_enemy_dynamic_collider(&self.resources);
         let enemy_entity = self.world.push((
-            Position {
-                src: Vec2::new(50.0, 10.0),
-            },
-            Sprite::new(
-                "slimeu_base".to_owned(),
-                0.,
-                0.,
-                texture.width(),
-                texture.height(),
-            ),
-            Velocity {
-                src: Vec2::new(0., 0.),
-            },
+            Position { src: Vec2::new(50.0, 10.0) },
+            Sprite::new("slimeu_base".to_owned(), 0., 0., texture.width(), texture.height()),
+            Velocity { src: Vec2::new(0., 0.) },
             Gravity::new(Vec2::new(0.0, 8.0)),
             Hitbox::new(enemy_chandle),
             CombatStats::new(),
             AiControlled::new(),
             HitMemory::new(),
         ));
-        let mut body_entity_map = self
-            .resources
-            .get_mut::<crate::phx::BodyEntityMap>()
-            .unwrap();
+        let mut body_entity_map = self.resources.get_mut::<crate::phx::BodyEntityMap>().unwrap();
         body_entity_map.insert(player_bhandle, player_entity);
         body_entity_map.insert(enemy_bhandle, enemy_entity);
     }
@@ -162,22 +124,16 @@ fn makeshift_static_platform(resources: &Resources) -> resphys::ColliderHandle {
     let mut bodies = resources.get_mut::<BodySet>().unwrap();
     let mut colliders = resources.get_mut::<ColliderSet>().unwrap();
 
-    let body = resphys::builder::BodyDesc::new()
-        .with_position(Vec2::new(70., 80.))
-        .make_static()
-        .build();
+    let body =
+        resphys::builder::BodyDesc::new().with_position(Vec2::new(70., 80.)).make_static().build();
     let collider = resphys::builder::ColliderDesc::new(
-        resphys::AABB {
-            half_exts: Vec2::new(60., 8.),
-        },
+        resphys::AABB { half_exts: Vec2::new(60., 8.) },
         ColliderTag::Tile,
     )
     .with_category(Category::GROUND.bits());
 
     let bhandle = bodies.insert(body);
-    colliders
-        .insert(collider.build(bhandle), &mut bodies, &mut physics)
-        .unwrap()
+    colliders.insert(collider.build(bhandle), &mut bodies, &mut physics).unwrap()
 }
 
 fn makeshift_player_dynamic_collider(
@@ -195,9 +151,7 @@ fn makeshift_player_dynamic_collider(
         // .self_collision(false)
         .build();
     let collider = resphys::builder::ColliderDesc::new(
-        resphys::AABB {
-            half_exts: Vec2::new(5., 4.),
-        },
+        resphys::AABB { half_exts: Vec2::new(5., 4.) },
         ColliderTag::Player,
     )
     .with_category(Category::PLAYER.bits())
@@ -205,12 +159,7 @@ fn makeshift_player_dynamic_collider(
     .with_offset(Vec2::new(0., 4.));
 
     let bhandle = bodies.insert(body);
-    (
-        bhandle,
-        colliders
-            .insert(collider.build(bhandle), &mut bodies, &mut physics)
-            .unwrap(),
-    )
+    (bhandle, colliders.insert(collider.build(bhandle), &mut bodies, &mut physics).unwrap())
 }
 
 fn makeshift_enemy_dynamic_collider(
@@ -228,9 +177,7 @@ fn makeshift_enemy_dynamic_collider(
         // .self_collision(false)
         .build();
     let collider = resphys::builder::ColliderDesc::new(
-        resphys::AABB {
-            half_exts: Vec2::new(5., 4.),
-        },
+        resphys::AABB { half_exts: Vec2::new(5., 4.) },
         ColliderTag::Player,
     )
     .with_category(Category::ENEMY.bits())
@@ -238,10 +185,5 @@ fn makeshift_enemy_dynamic_collider(
     .with_offset(Vec2::new(0., 4.));
 
     let bhandle = bodies.insert(body);
-    (
-        bhandle,
-        colliders
-            .insert(collider.build(bhandle), &mut bodies, &mut physics)
-            .unwrap(),
-    )
+    (bhandle, colliders.insert(collider.build(bhandle), &mut bodies, &mut physics).unwrap())
 }

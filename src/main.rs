@@ -21,9 +21,7 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     if cfg!(not(target_arch = "wasm32")) {
-        simple_logger::SimpleLogger::new()
-            .init()
-            .expect("Logger failed");
+        simple_logger::SimpleLogger::new().init().expect("Logger failed");
     }
     let mut game = game::Game::new();
     game.init().await;

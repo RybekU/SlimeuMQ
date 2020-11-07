@@ -11,10 +11,7 @@ pub struct Gravity {
 
 impl Gravity {
     pub fn new(strength: Vec2) -> Self {
-        Self {
-            strength,
-            enabled: true,
-        }
+        Self { strength, enabled: true }
     }
 }
 
@@ -60,21 +57,14 @@ impl OnGround {
             (sensor, checked_collider.owner)
         };
 
-        let sensor_handle = colliders
-            .insert(sensor.build(owner), &mut bodies, &mut physics)
-            .unwrap();
-        Self {
-            sensor_handle,
-            on_ground: true,
-        }
+        let sensor_handle =
+            colliders.insert(sensor.build(owner), &mut bodies, &mut physics).unwrap();
+        Self { sensor_handle, on_ground: true }
     }
 }
 
 // could this be part of gravity system if all components will use both?
 #[system(for_each)]
 pub fn ground_check(#[resource] phys_world: &PhysicsWorld, ground_data: &mut OnGround) {
-    ground_data.on_ground = phys_world
-        .interactions_of(ground_data.sensor_handle)
-        .next()
-        .is_some();
+    ground_data.on_ground = phys_world.interactions_of(ground_data.sensor_handle).next().is_some();
 }
