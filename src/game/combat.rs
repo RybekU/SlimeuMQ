@@ -1,17 +1,29 @@
 use super::ai::{AiControlled, HitMemory};
 use super::player::PlayerControlled;
 use crate::effect::{tint::TintChange, EffectData};
-use crate::phx::{BodySet, ColliderSet, PhysicsWorld};
+use crate::phx::{BodySet, ColliderSet, PhysicsWorld, Velocity};
 use glam::Vec2;
 use legion::{system, systems::CommandBuffer, world::SubWorld, Entity, IntoQuery};
 
 // Treat things that just react on getting hit (change direction, disappear) in a different way to things that actually have some sort of HP
 // ^ the above statement is not a decision set in stone yet
 
-/// Every entity that is truly alive has it
+/// Every entity that partakes in combat has this
 #[derive(Debug, Clone)]
-pub struct Vitality {
-    // TODO: Store the action (sound+behavior?) when hit?
+pub struct CombatStats {
+    /// knockback force
+    pub kb_force: Vec2,
+    /// knockback resistance
+    pub kb_res: f32,
+}
+
+impl CombatStats {
+    pub fn new() -> Self {
+        Self {
+            kb_force: Vec2::new(64., -64.),
+            kb_res: 0.5,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -38,7 +50,8 @@ impl DamageQueue {
 #[system]
 #[write_component(PlayerControlled)]
 #[write_component(AiControlled)]
-#[write_component(Vitality)]
+#[write_component(CombatStats)]
+#[write_component(Velocity)]
 #[write_component(HitMemory)]
 pub fn apply_damage(
     world: &mut SubWorld,
@@ -46,15 +59,34 @@ pub fn apply_damage(
     #[resource] damage_queue: &mut DamageQueue,
 ) {
     // get input's damage
-    // get output's vitality
+    // get output's CombatStats
     for DamageEvent { input, output } in damage_queue.events.drain(..) {
         log::debug!(
             "A DamageEvent arrived succesfully from {:?} and hit {:?}",
             input,
             output
         );
-        if let Ok(HitMemory(hit_state)) = <&mut HitMemory>::query().get_mut(world, output) {
-            *hit_state = true;
+
+        let maybe_off_combat = <&CombatStats>::query().get(world, input).ok().cloned();
+        if let Ok((maybe_hit_memory, maybe_velocity, def_combat)) =
+            <(Option<&mut HitMemory>, Option<&mut Velocity>, &CombatStats)>::query()
+                .get_mut(world, output)
+        {
+            if let Some(HitMemory(hit_state)) = maybe_hit_memory {
+                *hit_state = true;
+            }
+
+            let knockback = if let Some(off_combat) = maybe_off_combat {
+                off_combat.kb_force * (1. - def_combat.kb_res)
+            } else {
+                Vec2::zero()
+            };
+
+            if let Some(velocity) = maybe_velocity {
+                // TODO: take into account direction
+                velocity.src = knockback;
+            }
+
             command_buffer.push((
                 EffectData {
                     parent: output,

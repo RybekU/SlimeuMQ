@@ -38,6 +38,7 @@ impl Game {
     }
     pub async fn init(&mut self) {
         use self::ai::{AiControlled, HitMemory};
+        use self::combat::CombatStats;
         use self::player::PlayerControlled;
         use crate::gfx::Sprite;
         use crate::phx::{Gravity, Hitbox, OnGround, Position, Velocity};
@@ -81,6 +82,7 @@ impl Game {
             Gravity::new(Vec2::new(0.0, 8.0)),
             OnGround::new(&self.resources, player_chandle),
             Hitbox::new(player_chandle),
+            CombatStats::new(),
             PlayerControlled::new(),
         ));
 
@@ -101,6 +103,7 @@ impl Game {
             },
             Gravity::new(Vec2::new(0.0, 8.0)),
             Hitbox::new(enemy_chandle),
+            CombatStats::new(),
             AiControlled::new(),
             HitMemory::new(),
         ));
@@ -140,8 +143,8 @@ fn init_schedule() -> Schedule {
         .add_system(crate::phx::resphys_presync_system())
         .add_system(crate::phx::resphys_sync_system())
         .add_system(crate::game::combat::spread_pain_system())
-        .add_system(crate::game::combat::apply_damage_system())
         .add_system(crate::phx::temp::reset_velocity_system())
+        .add_system(crate::game::combat::apply_damage_system())
         .build()
 }
 

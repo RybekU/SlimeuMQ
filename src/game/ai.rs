@@ -1,5 +1,6 @@
 use crate::gfx::Sprite;
 use crate::phx::{OnGround, Position, Velocity};
+use crate::util::lerp;
 use crate::FRAMETIME;
 use legion::{component, system, world::SubWorld, Entity, IntoQuery};
 
@@ -9,6 +10,7 @@ pub struct AiControlled {
 
 // entities with this component want to remember getting hit
 // TODO: should be replaced with generic event when FSM is reworked
+#[derive(Debug, Clone)]
 pub struct HitMemory(pub bool);
 
 impl HitMemory {
@@ -84,7 +86,17 @@ fn idle_update(
     world: &mut SubWorld,
     _resources: &ResourceRefs,
 ) -> Option<AiState> {
-    let HitMemory(is_hit) = <&mut HitMemory>::query().get_mut(world, *entity).unwrap();
+    const DECEL: f32 = 20.;
+
+    let (HitMemory(is_hit), Velocity { src: vel }) = <(&mut HitMemory, &mut Velocity)>::query()
+        .get_mut(world, *entity)
+        .unwrap();
+
+    vel.set_x(lerp(0., vel.x(), f32::exp2(-DECEL * FRAMETIME)));
+
+    if vel.x().abs() < 1. {
+        vel.set_x(0.);
+    }
 
     if *is_hit {
         *is_hit = false;
@@ -104,10 +116,20 @@ fn hurt_update(
     timer: &mut f32,
     _resources: &ResourceRefs,
 ) -> Option<AiState> {
-    let HitMemory(is_hit) = <&mut HitMemory>::query().get_mut(world, *entity).unwrap();
+    const DECEL: f32 = 10.0;
+
+    let (HitMemory(is_hit), Velocity { src: vel }) = <(&mut HitMemory, &mut Velocity)>::query()
+        .get_mut(world, *entity)
+        .unwrap();
     *is_hit = false;
 
     *timer -= FRAMETIME;
+
+    vel.set_x(lerp(0., vel.x(), f32::exp2(-DECEL * FRAMETIME)));
+
+    if vel.x().abs() < 1. {
+        vel.set_x(0.);
+    }
 
     if *timer <= 0. {
         return Some(AiState::Idle);
