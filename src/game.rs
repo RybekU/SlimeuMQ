@@ -38,21 +38,37 @@ impl Game {
         use crate::phx::{Gravity, Hitbox, OnGround, Position, Velocity};
         use glam::Vec2;
 
-        let texture: Texture2D = macroquad::load_texture("media/slimeu_base-b.png").await;
-        macroquad::set_texture_filter(texture, macroquad::FilterMode::Nearest);
+        let slimeu_texture: Texture2D = macroquad::load_texture("media/slimeu_base-b.png").await;
+        macroquad::set_texture_filter(slimeu_texture, macroquad::FilterMode::Nearest);
 
-        self.textures.insert("slimeu_base".into(), texture);
+        let goblin_texture: Texture2D = macroquad::load_texture("media/goblin_base-b.png").await;
+        macroquad::set_texture_filter(goblin_texture, macroquad::FilterMode::Nearest);
+
+        self.textures.insert("slimeu_base".into(), slimeu_texture);
+        self.textures.insert("goblin_base".into(), goblin_texture);
 
         self.world.push((Hitbox::new(makeshift_static_platform(&self.resources)),));
         self.world.push((
             Position { src: Vec2::new(10.0, 10.0) },
-            Sprite::new("slimeu_base".to_owned(), 0., 0., texture.width(), texture.height()),
+            Sprite::new(
+                "slimeu_base".to_owned(),
+                0.,
+                0.,
+                slimeu_texture.width(),
+                slimeu_texture.height(),
+            ),
         ));
 
         let (player_bhandle, player_chandle) = makeshift_player_dynamic_collider(&self.resources);
         let player_entity = self.world.push((
             Position { src: Vec2::new(30.0, 10.0) },
-            Sprite::new("slimeu_base".to_owned(), 0., 0., texture.width(), texture.height()),
+            Sprite::new(
+                "slimeu_base".to_owned(),
+                0.,
+                0.,
+                slimeu_texture.width(),
+                slimeu_texture.height(),
+            ),
             Velocity { src: Vec2::new(0., 0.) },
             Gravity::new(Vec2::new(0.0, 8.0)),
             OnGround::new(&self.resources, player_chandle),
@@ -64,7 +80,13 @@ impl Game {
         let (enemy_bhandle, enemy_chandle) = makeshift_enemy_dynamic_collider(&self.resources);
         let enemy_entity = self.world.push((
             Position { src: Vec2::new(50.0, 10.0) },
-            Sprite::new("slimeu_base".to_owned(), 0., 0., texture.width(), texture.height()),
+            Sprite::new(
+                "goblin_base".to_owned(),
+                0.,
+                0.,
+                goblin_texture.width(),
+                goblin_texture.height(),
+            ),
             Velocity { src: Vec2::new(0., 0.) },
             Gravity::new(Vec2::new(0.0, 8.0)),
             Hitbox::new(enemy_chandle),
