@@ -3,7 +3,7 @@ Module for processing the raw input into easy for the game to reason about infor
 Currently handles only keyboard.
 */
 use enum_map::{Enum, EnumMap};
-use macroquad::{is_key_down, KeyCode};
+use macroquad::input::{is_key_down, KeyCode};
 
 /// Treat as if the game had dedicated controller with these buttons.
 #[derive(Debug, Enum, Clone, Copy)]

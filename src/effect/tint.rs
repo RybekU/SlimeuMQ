@@ -1,7 +1,7 @@
 use super::EffectData;
 use crate::gfx::Sprite;
 use legion::{system, world::SubWorld, IntoQuery};
-use macroquad::{Color, WHITE};
+use macroquad::color::{Color, WHITE};
 
 pub struct TintChange {
     /// Color set when effect begins

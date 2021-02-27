@@ -2,7 +2,8 @@ use crate::game::combat::HurtQueue;
 use crate::phx::{BodySet, ColliderSet, ColliderTag};
 use glam::Vec2;
 use legion::systems::Resources;
-use macroquad::{draw_rectangle, GREEN, RED, YELLOW};
+use macroquad::color::{GREEN, RED, YELLOW};
+use macroquad::shapes::draw_rectangle;
 use resphys::{Collider, ColliderState};
 
 pub fn visualize_hitboxes(resources: &Resources) {
@@ -21,7 +22,7 @@ fn draw_collider(collider: &Collider<ColliderTag>, position: Vec2) {
         ColliderState::Sensor => YELLOW,
     };
 
-    color.0[3] = (0.6 * 255.) as u8;
+    color.a = 0.6;
 
     let wh = collider.shape.half_exts;
     let x_pos = position.x() - wh.x() + collider.offset.x();
@@ -33,7 +34,7 @@ pub fn visualize_hurtboxes(resources: &Resources) {
     let hurt_queue = resources.get::<HurtQueue>().unwrap();
 
     let mut color = RED;
-    color.0[3] = (0.6 * 255.) as u8;
+    color.a = 0.6;
 
     for hurt_info in hurt_queue.copy_msgs.iter() {
         let actual_pos = hurt_info.position - hurt_info.half_exts;

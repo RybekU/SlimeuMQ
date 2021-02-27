@@ -6,10 +6,12 @@ use legion::{
     systems::{Resources, Schedule},
     world::World,
 };
-use macroquad::Texture2D;
+use macroquad::texture::{load_texture, set_texture_filter, FilterMode, Texture2D};
 
-use crate::util::{ButtonsState, SimpleCam2D};
+use crate::util::ButtonsState;
 type ImageStorage = fxhash::FxHashMap<String, Texture2D>;
+
+use macroquad::camera::Camera2D;
 
 pub struct Game {
     pub world: World,
@@ -17,7 +19,7 @@ pub struct Game {
     pub schedule: Schedule,
     pub textures: ImageStorage,
 
-    pub camera: SimpleCam2D,
+    pub camera: Camera2D,
 }
 
 impl Game {
@@ -27,7 +29,8 @@ impl Game {
         let schedule = init_schedule();
 
         let images = ImageStorage::default();
-        let camera = SimpleCam2D::with_zoom(crate::GAME_SCALE as f32);
+        let camera =
+            Camera2D::from_display_rect(macroquad::math::Rect::new(0.0, 0.0, 320.0, 180.0));
         Self { world, resources, schedule, textures: images, camera }
     }
     pub async fn init(&mut self) {
@@ -38,11 +41,11 @@ impl Game {
         use crate::phx::{Gravity, Hitbox, OnGround, Position, Velocity};
         use glam::Vec2;
 
-        let slimeu_texture: Texture2D = macroquad::load_texture("media/slimeu_base-b.png").await;
-        macroquad::set_texture_filter(slimeu_texture, macroquad::FilterMode::Nearest);
+        let slimeu_texture: Texture2D = load_texture("media/slimeu_base-b.png").await;
+        set_texture_filter(slimeu_texture, FilterMode::Nearest);
 
-        let goblin_texture: Texture2D = macroquad::load_texture("media/goblin_base-b.png").await;
-        macroquad::set_texture_filter(goblin_texture, macroquad::FilterMode::Nearest);
+        let goblin_texture: Texture2D = load_texture("media/goblin_base-b.png").await;
+        set_texture_filter(goblin_texture, FilterMode::Nearest);
 
         self.textures.insert("slimeu_base".into(), slimeu_texture);
         self.textures.insert("goblin_base".into(), goblin_texture);

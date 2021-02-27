@@ -4,6 +4,7 @@ use crate::effect::{tint::TintChange, EffectData};
 use crate::phx::{BodySet, ColliderSet, PhysicsWorld, Velocity};
 use glam::Vec2;
 use legion::{system, systems::CommandBuffer, world::SubWorld, Entity, IntoQuery};
+use macroquad::color::Color;
 
 // Treat things that just react on getting hit (change direction, disappear) in a different way to things that actually have some sort of HP
 // ^ the above statement is not a decision set in stone yet
@@ -80,7 +81,7 @@ pub fn apply_damage(
 
             command_buffer.push((
                 EffectData { parent: output, duration: 0.15 },
-                TintChange::new(macroquad::Color([255, 36, 0, 192])),
+                TintChange::new(macroquad::color_u8!(255, 36, 0, 192)),
             ));
         }
     }

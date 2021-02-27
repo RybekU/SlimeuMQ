@@ -8,13 +8,13 @@ edition = "2018"
 [dependencies]
 
 # framework
-macroquad = {git="https://github.com/not-fl3/macroquad", rev="e18dd86"}
-miniquad = { version = "=0.3.0-alpha.13" }
+macroquad = {git="https://github.com/not-fl3/macroquad", rev="3645235"}
+miniquad = { version = "=0.3.0-alpha.25" }
 
 glam = {version = "0.9", features = ["scalar-math"] }
 
 # ECS
-legion = "0.3.0"
+legion = "0.4.0"
 
 #hashmap
 fxhash = "0.2.1"

@@ -1,4 +1,6 @@
-use macroquad::*;
+use macroquad::prelude::Conf;
+use macroquad::window::next_frame;
+
 mod effect;
 mod game;
 mod gfx;
