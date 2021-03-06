@@ -1,5 +1,5 @@
 use crate::game::combat::{HurtInfo, HurtQueue};
-use crate::gfx::Sprite;
+use crate::gfx::{Animation, Sprite};
 use crate::phx::{OnGround, Position, Velocity};
 use crate::util::{input::Button, lerp, ButtonsState};
 use crate::FRAMETIME;
@@ -25,6 +25,7 @@ struct ResourceRefs<'a> {
 #[write_component(Velocity)]
 #[write_component(PlayerControlled)]
 #[write_component(Sprite)]
+#[write_component(Animation)]
 #[read_component(OnGround)]
 #[read_component(Position)]
 pub fn update_fsm(
@@ -118,8 +119,10 @@ fn idle_update(
     None
 }
 
-fn idle_on_enter(_entity: &Entity, _world: &SubWorld) {
+fn idle_on_enter(entity: &Entity, world: &mut SubWorld) {
     log::info!("Player idle");
+    let animation = <&mut Animation>::query().get_mut(world, *entity).unwrap();
+    animation.change("slimeu_idle");
 }
 
 fn walk_update(
@@ -173,8 +176,10 @@ fn walk_update(
     None
 }
 
-fn walk_on_enter(_entity: &Entity, _world: &SubWorld) {
+fn walk_on_enter(entity: &Entity, world: &mut SubWorld) {
     log::info!("Player walking");
+    let animation = <&mut Animation>::query().get_mut(world, *entity).unwrap();
+    animation.change("slimeu_run");
 }
 
 fn in_air_update(

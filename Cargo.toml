@@ -14,7 +14,7 @@ miniquad = { version = "=0.3.0-alpha.25" }
 glam = {version = "0.9", features = ["scalar-math"] }
 
 # ECS
-legion = "0.4.0"
+legion = {version = "0.4.0", features = ["extended-tuple-impls"]}
 
 #hashmap
 fxhash = "0.2.1"

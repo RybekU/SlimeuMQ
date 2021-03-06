@@ -1,4 +1,10 @@
+pub mod animation;
 pub mod debug_info;
+
+pub use self::animation::*;
+
+pub type AnimationStorage = fxhash::FxHashMap<String, AnimationTemplate>;
+pub type TextureStorage = fxhash::FxHashMap<String, macroquad::texture::Texture2D>;
 
 use crate::game::Game;
 use crate::phx::Position;
@@ -11,10 +17,10 @@ use macroquad::texture::{draw_texture_ex, DrawTextureParams};
 use macroquad::window::clear_background;
 
 pub struct Sprite {
-    pub src: String,
+    pub texture: String,
     /// area of the texture to be drawn
     pub rect: Rect,
-    /// offset from the location given by Position component, by default the center
+    /// offset from the location given by `Position` component, by default the center
     pub offset: Vec2,
     /// white for default
     pub color: Color,
@@ -26,7 +32,7 @@ impl Sprite {
     /// Offset is centered by default
     pub fn new(name: String, x: f32, y: f32, width: f32, height: f32) -> Self {
         Self {
-            src: name,
+            texture: name,
             rect: Rect::new(x, y, width, height),
             offset: -Vec2::new(width, height) / 2.,
             color: WHITE,
@@ -41,7 +47,7 @@ pub fn render(game: &Game) {
 
     let mut query = <(&Position, &Sprite)>::query();
     for (position, sprite) in query.iter(&game.world) {
-        let texture = game.textures.get(&sprite.src).unwrap();
+        let texture = game.textures.get(&sprite.texture).unwrap();
         let rect = sprite.rect;
 
         draw_texture_ex(

@@ -8,8 +8,8 @@ use legion::{
 };
 use macroquad::texture::{load_texture, set_texture_filter, FilterMode, Texture2D};
 
+use crate::gfx::{AnimationStorage, TextureStorage};
 use crate::util::ButtonsState;
-type ImageStorage = fxhash::FxHashMap<String, Texture2D>;
 
 use macroquad::camera::Camera2D;
 
@@ -17,7 +17,7 @@ pub struct Game {
     pub world: World,
     pub resources: Resources,
     pub schedule: Schedule,
-    pub textures: ImageStorage,
+    pub textures: TextureStorage,
 
     pub camera: Camera2D,
 }
@@ -28,10 +28,10 @@ impl Game {
         let resources = init_resources();
         let schedule = init_schedule();
 
-        let images = ImageStorage::default();
+        let textures = TextureStorage::default();
         let camera =
             Camera2D::from_display_rect(macroquad::math::Rect::new(0.0, 0.0, 320.0, 180.0));
-        Self { world, resources, schedule, textures: images, camera }
+        Self { world, resources, schedule, textures, camera }
     }
     pub async fn init(&mut self) {
         use self::ai::{AiControlled, HitMemory};
@@ -41,43 +41,68 @@ impl Game {
         use crate::phx::{Gravity, Hitbox, OnGround, Position, Velocity};
         use glam::Vec2;
 
-        let slimeu_texture: Texture2D = load_texture("media/slimeu_base-b.png").await;
+        let slimeu_texture: Texture2D = load_texture("media/slimeu.png").await;
         set_texture_filter(slimeu_texture, FilterMode::Nearest);
 
         let goblin_texture: Texture2D = load_texture("media/goblin_base-b.png").await;
         set_texture_filter(goblin_texture, FilterMode::Nearest);
 
-        self.textures.insert("slimeu_base".into(), slimeu_texture);
+        self.textures.insert("slimeu".into(), slimeu_texture);
         self.textures.insert("goblin_base".into(), goblin_texture);
+
+        {
+            use crate::gfx::{AnimationTemplate, Frame};
+            use macroquad::math::Rect;
+            let mut animation_storage = self.resources.get_mut::<AnimationStorage>().unwrap();
+            // TODO: Safer API that doesnt allow empty animation
+            let slimeu_static = AnimationTemplate {
+                rect: Rect::new(1., 0., 18., 18.),
+                move_by: 17.,
+                repeat: false,
+                texture_name: "slimeu".to_owned(),
+                frames: vec![Frame { duration: 0.1 }; 1],
+            };
+            animation_storage.insert("slimeu_static".into(), slimeu_static);
+            let slimeu_idle = AnimationTemplate {
+                rect: Rect::new(17., 0., 18., 18.),
+                move_by: 17.,
+                repeat: true,
+                texture_name: "slimeu".to_owned(),
+                frames: vec![Frame { duration: 0.1 }; 5],
+            };
+            animation_storage.insert("slimeu_idle".into(), slimeu_idle);
+            let slimeu_run = AnimationTemplate {
+                rect: Rect::new(1., 17., 18., 18.),
+                move_by: 17.,
+                repeat: true,
+                texture_name: "slimeu".to_owned(),
+                frames: vec![Frame { duration: 0.08 }; 8],
+            };
+            animation_storage.insert("slimeu_run".into(), slimeu_run);
+        }
+
+        let animation_storage = self.resources.get::<AnimationStorage>().unwrap();
 
         self.world.push((Hitbox::new(makeshift_static_platform(&self.resources)),));
         self.world.push((
             Position { src: Vec2::new(10.0, 10.0) },
-            Sprite::new(
-                "slimeu_base".to_owned(),
-                0.,
-                0.,
-                slimeu_texture.width(),
-                slimeu_texture.height(),
-            ),
+            Sprite::new("slimeu".to_owned(), 17., 0., 18., 18.),
+            crate::gfx::Animation::new(&animation_storage, "slimeu_run"),
         ));
 
         let (player_bhandle, player_chandle) = makeshift_player_dynamic_collider(&self.resources);
+        let (player_sprite, player_animation) =
+            crate::gfx::Animation::new_with_sprite(&animation_storage, "slimeu_idle");
         let player_entity = self.world.push((
             Position { src: Vec2::new(30.0, 10.0) },
-            Sprite::new(
-                "slimeu_base".to_owned(),
-                0.,
-                0.,
-                slimeu_texture.width(),
-                slimeu_texture.height(),
-            ),
             Velocity { src: Vec2::new(0., 0.) },
             Gravity::new(Vec2::new(0.0, 8.0)),
             OnGround::new(&self.resources, player_chandle),
             Hitbox::new(player_chandle),
             CombatStats::new(),
             PlayerControlled::new(),
+            player_sprite,
+            player_animation,
         ));
 
         let (enemy_bhandle, enemy_chandle) = makeshift_enemy_dynamic_collider(&self.resources);
@@ -110,6 +135,7 @@ impl Game {
 
 fn init_resources() -> Resources {
     let mut resources = Resources::default();
+    resources.insert(AnimationStorage::default());
     resources.insert(crate::phx::PhysicsWorld::new());
     resources.insert(crate::phx::BodySet::new());
     resources.insert(crate::phx::ColliderSet::new());
@@ -123,6 +149,7 @@ fn init_resources() -> Resources {
 
 fn init_schedule() -> Schedule {
     add_effect_systems(&mut Schedule::builder())
+        .add_system(crate::gfx::animation::animate_system())
         .add_system(crate::phx::gravity_system())
         .add_system(crate::phx::ground_check_system())
         .add_system(self::player::update_fsm_system())
