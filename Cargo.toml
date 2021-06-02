@@ -8,8 +8,8 @@ edition = "2018"
 [dependencies]
 
 # framework
-macroquad = {git="https://github.com/not-fl3/macroquad", rev="3645235"}
-miniquad = { version = "=0.3.0-alpha.25" }
+macroquad = {git="https://github.com/not-fl3/macroquad", rev="841b046"}
+miniquad = { version = "=0.3.0-alpha.35" }
 
 glam = {version = "0.9", features = ["scalar-math"] }
 

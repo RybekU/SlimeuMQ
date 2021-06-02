@@ -6,7 +6,7 @@ use legion::{
     systems::{Resources, Schedule},
     world::World,
 };
-use macroquad::texture::{load_texture, set_texture_filter, FilterMode, Texture2D};
+use macroquad::texture::{load_texture, FilterMode, Texture2D};
 
 use crate::gfx::{AnimationStorage, TextureStorage};
 use crate::util::ButtonsState;
@@ -41,11 +41,11 @@ impl Game {
         use crate::phx::{Gravity, Hitbox, OnGround, Position, Velocity};
         use glam::Vec2;
 
-        let slimeu_texture: Texture2D = load_texture("media/slimeu.png").await;
-        set_texture_filter(slimeu_texture, FilterMode::Nearest);
+        let slimeu_texture: Texture2D = load_texture("media/slimeu.png").await.unwrap();
+        slimeu_texture.set_filter(FilterMode::Nearest);
 
-        let goblin_texture: Texture2D = load_texture("media/goblin_base-b.png").await;
-        set_texture_filter(goblin_texture, FilterMode::Nearest);
+        let goblin_texture: Texture2D = load_texture("media/goblin_base-b.png").await.unwrap();
+        goblin_texture.set_filter(FilterMode::Nearest);
 
         self.textures.insert("slimeu".into(), slimeu_texture);
         self.textures.insert("goblin_base".into(), goblin_texture);

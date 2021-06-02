@@ -13,9 +13,10 @@ pub const FRAMETIME: f32 = 1. / UPDATE_RATE;
 
 fn window_conf() -> Conf {
     Conf {
-        window_title: "Slimeu PreGreekAlphabet".to_owned(),
+        window_title: "Slimeu Early".to_owned(),
         window_width: 320 * GAME_SCALE,
         window_height: 180 * GAME_SCALE,
+        sample_count: 0,
         ..Default::default()
     }
 }
