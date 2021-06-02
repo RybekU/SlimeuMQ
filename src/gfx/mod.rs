@@ -8,6 +8,8 @@ pub type TextureStorage = fxhash::FxHashMap<String, macroquad::texture::Texture2
 
 use crate::game::Game;
 use crate::phx::Position;
+use crate::GAME_SCALE;
+
 use glam::Vec2;
 use legion::IntoQuery;
 use macroquad::camera::set_camera;
@@ -41,9 +43,16 @@ impl Sprite {
     }
 }
 
+/// aligns position with the pixel grid of given game scale
+pub fn align2subpixels(num: f32, game_scale: f32) -> f32 {
+    let frac = num.fract();
+    let num = num.trunc();
+    num + (frac * game_scale).trunc() / game_scale
+}
+
 pub fn render(game: &Game) {
     clear_background(GRAY);
-    set_camera(game.camera);
+    set_camera(&game.camera);
 
     let mut query = <(&Position, &Sprite)>::query();
     for (position, sprite) in query.iter(&game.world) {
@@ -52,8 +61,8 @@ pub fn render(game: &Game) {
 
         draw_texture_ex(
             *texture,
-            position.src.x() + sprite.offset.x(),
-            position.src.y() + sprite.offset.y(),
+            align2subpixels(position.src.x() + sprite.offset.x(), GAME_SCALE as f32),
+            align2subpixels(position.src.y() + sprite.offset.y(), GAME_SCALE as f32),
             sprite.color,
             DrawTextureParams { source: Some(rect), flip_x: sprite.flip, ..Default::default() },
         );

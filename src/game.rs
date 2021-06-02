@@ -44,7 +44,7 @@ impl Game {
         let slimeu_texture: Texture2D = load_texture("media/slimeu.png").await.unwrap();
         slimeu_texture.set_filter(FilterMode::Nearest);
 
-        let goblin_texture: Texture2D = load_texture("media/goblin_base-b.png").await.unwrap();
+        let goblin_texture: Texture2D = load_texture("media/goblin_base.png").await.unwrap();
         goblin_texture.set_filter(FilterMode::Nearest);
 
         self.textures.insert("slimeu".into(), slimeu_texture);
@@ -56,24 +56,24 @@ impl Game {
             let mut animation_storage = self.resources.get_mut::<AnimationStorage>().unwrap();
             // TODO: Safer API that doesnt allow empty animation
             let slimeu_static = AnimationTemplate {
-                rect: Rect::new(1., 0., 18., 18.),
-                move_by: 17.,
+                rect: Rect::new(0., 0., 16., 16.),
+                move_by: 16.,
                 repeat: false,
                 texture_name: "slimeu".to_owned(),
                 frames: vec![Frame { duration: 0.1 }; 1],
             };
             animation_storage.insert("slimeu_static".into(), slimeu_static);
             let slimeu_idle = AnimationTemplate {
-                rect: Rect::new(17., 0., 18., 18.),
-                move_by: 17.,
+                rect: Rect::new(16., 0., 16., 16.),
+                move_by: 16.,
                 repeat: true,
                 texture_name: "slimeu".to_owned(),
                 frames: vec![Frame { duration: 0.1 }; 5],
             };
             animation_storage.insert("slimeu_idle".into(), slimeu_idle);
             let slimeu_run = AnimationTemplate {
-                rect: Rect::new(1., 17., 18., 18.),
-                move_by: 17.,
+                rect: Rect::new(0., 16., 16., 16.),
+                move_by: 16.,
                 repeat: true,
                 texture_name: "slimeu".to_owned(),
                 frames: vec![Frame { duration: 0.08 }; 8],
@@ -86,7 +86,7 @@ impl Game {
         self.world.push((Hitbox::new(makeshift_static_platform(&self.resources)),));
         self.world.push((
             Position { src: Vec2::new(10.0, 10.0) },
-            Sprite::new("slimeu".to_owned(), 17., 0., 18., 18.),
+            Sprite::new("slimeu".to_owned(), 16., 0., 16., 16.),
             crate::gfx::Animation::new(&animation_storage, "slimeu_run"),
         ));
 

@@ -17,6 +17,7 @@ fn window_conf() -> Conf {
         window_width: 320 * GAME_SCALE,
         window_height: 180 * GAME_SCALE,
         sample_count: 0,
+        window_resizable: false,
         ..Default::default()
     }
 }
