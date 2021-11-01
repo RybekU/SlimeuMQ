@@ -10,6 +10,7 @@ use macroquad::texture::{load_texture, FilterMode, Texture2D};
 
 use crate::gfx::{AnimationStorage, TextureStorage};
 use crate::util::ButtonsState;
+use crate::GAME_DIMENSIONS;
 
 use macroquad::camera::Camera2D;
 
@@ -29,8 +30,12 @@ impl Game {
         let schedule = init_schedule();
 
         let textures = TextureStorage::default();
-        let camera =
-            Camera2D::from_display_rect(macroquad::math::Rect::new(0.0, 0.0, 320.0, 180.0));
+        let camera = Camera2D::from_display_rect(macroquad::math::Rect::new(
+            0.0,
+            0.0,
+            GAME_DIMENSIONS.0 as f32,
+            GAME_DIMENSIONS.1 as f32,
+        ));
         Self { world, resources, schedule, textures, camera }
     }
     pub async fn init(&mut self) {

@@ -11,11 +11,14 @@ pub const GAME_SCALE: i32 = 4;
 pub const UPDATE_RATE: f32 = 60.;
 pub const FRAMETIME: f32 = 1. / UPDATE_RATE;
 
+pub const GAME_DIMENSIONS: (i32, i32) = (320, 180);
+// 384x216
+
 fn window_conf() -> Conf {
     Conf {
         window_title: "Slimeu Early".to_owned(),
-        window_width: 320 * GAME_SCALE,
-        window_height: 180 * GAME_SCALE,
+        window_width: GAME_DIMENSIONS.0 * GAME_SCALE,
+        window_height: GAME_DIMENSIONS.1 * GAME_SCALE,
         sample_count: 0,
         window_resizable: false,
         ..Default::default()
