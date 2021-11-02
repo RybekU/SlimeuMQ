@@ -41,7 +41,7 @@ enum State {
 
 impl Animation {
     pub fn new(animation_storage: &super::AnimationStorage, animation_name: &str) -> Self {
-        let animation_template = animation_storage.get(animation_name).expect(&animation_name);
+        let animation_template = animation_storage.get(animation_name).expect(animation_name);
         Self {
             played: animation_name.to_owned(),
             frame: 0,
@@ -55,7 +55,7 @@ impl Animation {
         animation_storage: &super::AnimationStorage,
         animation_name: &str,
     ) -> (Self, Sprite) {
-        let animation_template = animation_storage.get(animation_name).expect(&animation_name);
+        let animation_template = animation_storage.get(animation_name).expect(animation_name);
         (
             Self {
                 played: animation_name.to_owned(),

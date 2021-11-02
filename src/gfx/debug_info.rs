@@ -14,7 +14,7 @@ pub fn visualize_hitboxes(resources: &Resources) {
 
     for (_, collider) in colliders.iter() {
         let body = &bodies[collider.owner];
-        draw_collider(&collider, body.position);
+        draw_collider(collider, body.position);
     }
 }
 
