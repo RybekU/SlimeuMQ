@@ -88,7 +88,6 @@ impl Game {
 
         let animation_storage = self.resources.get::<AnimationStorage>().unwrap();
 
-        self.world.push((Hitbox::new(makeshift_static_platform(&self.resources)),));
         self.world.push((
             Position { src: Vec2::new(10.0, 10.0) },
             Sprite::new("slimeu".to_owned(), 16., 0., 16., 16.),
@@ -99,7 +98,7 @@ impl Game {
         let (player_sprite, player_animation) =
             crate::gfx::Animation::new_with_sprite(&animation_storage, "slimeu_idle");
         let player_entity = self.world.push((
-            Position { src: Vec2::new(30.0, 10.0) },
+            Position { src: Vec2::new(100.0, 60.0) },
             Velocity { src: Vec2::new(0., 0.) },
             Gravity::new(Vec2::new(0.0, 8.0)),
             OnGround::new(&self.resources, player_chandle),
@@ -112,7 +111,7 @@ impl Game {
 
         let (enemy_bhandle, enemy_chandle) = makeshift_enemy_dynamic_collider(&self.resources);
         let enemy_entity = self.world.push((
-            Position { src: Vec2::new(50.0, 10.0) },
+            Position { src: Vec2::new(80.0, 40.0) },
             Sprite::new(
                 "goblin_base".to_owned(),
                 0.,
@@ -130,6 +129,22 @@ impl Game {
         let mut body_entity_map = self.resources.get_mut::<crate::phx::BodyEntityMap>().unwrap();
         body_entity_map.insert(player_bhandle, player_entity);
         body_entity_map.insert(enemy_bhandle, enemy_entity);
+        {
+            let tilemap = crate::map::tilemap::Tilemap::load().expect("Tilemap should exist here");
+
+            let grid = &tilemap.grid[..];
+            grid.chunks_exact(tilemap.width as usize).enumerate().for_each(|(column_id, row)| {
+                row.iter().enumerate().for_each(|(row_id, &value)| {
+                    if value > 0 {
+                        makeshift_static_platform(
+                            &self.resources,
+                            (row_id as f32 * 16. + 8., column_id as f32 * 16. + 8.),
+                            (8., 8.),
+                        );
+                    }
+                });
+            });
+        }
     }
     pub fn update(&mut self) {
         // input should be updated on the main thread
@@ -173,7 +188,11 @@ fn add_effect_systems(builder: &mut legion::systems::Builder) -> &mut legion::sy
         .add_system(crate::effect::tint::tint_system())
 }
 
-fn makeshift_static_platform(resources: &Resources) -> resphys::ColliderHandle {
+fn makeshift_static_platform(
+    resources: &Resources,
+    position: (f32, f32),
+    shape: (f32, f32),
+) -> resphys::ColliderHandle {
     use crate::phx::{BodySet, Category, ColliderSet, ColliderTag, PhysicsWorld};
     use glam::Vec2;
 
@@ -181,10 +200,12 @@ fn makeshift_static_platform(resources: &Resources) -> resphys::ColliderHandle {
     let mut bodies = resources.get_mut::<BodySet>().unwrap();
     let mut colliders = resources.get_mut::<ColliderSet>().unwrap();
 
-    let body =
-        resphys::builder::BodyDesc::new().with_position(Vec2::new(70., 80.)).make_static().build();
+    let body = resphys::builder::BodyDesc::new()
+        .with_position(Vec2::new(position.0, position.1))
+        .make_static()
+        .build();
     let collider = resphys::builder::ColliderDesc::new(
-        resphys::AABB { half_exts: Vec2::new(60., 8.) },
+        resphys::AABB { half_exts: Vec2::new(shape.0, shape.1) },
         ColliderTag::Tile,
     )
     .with_category(Category::GROUND.bits());
@@ -204,7 +225,7 @@ fn makeshift_player_dynamic_collider(
     let mut colliders = resources.get_mut::<ColliderSet>().unwrap();
 
     let body = resphys::builder::BodyDesc::new()
-        .with_position(Vec2::new(30., 10.))
+        .with_position(Vec2::new(100., 60.))
         // .self_collision(false)
         .build();
     let collider = resphys::builder::ColliderDesc::new(
@@ -230,7 +251,7 @@ fn makeshift_enemy_dynamic_collider(
     let mut colliders = resources.get_mut::<ColliderSet>().unwrap();
 
     let body = resphys::builder::BodyDesc::new()
-        .with_position(Vec2::new(30., 10.))
+        .with_position(Vec2::new(100., 40.))
         // .self_collision(false)
         .build();
     let collider = resphys::builder::ColliderDesc::new(

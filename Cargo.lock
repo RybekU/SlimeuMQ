@@ -413,6 +413,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
+name = "ldtk_rust"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7135094ff34d3ccd8d30a2aaf555a51828a41a0d4c7977ae4d2165ca21c3809c"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "legion"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -920,6 +930,7 @@ dependencies = [
  "enum-map",
  "fxhash",
  "glam 0.9.5",
+ "ldtk_rust",
  "legion",
  "log",
  "macroquad",

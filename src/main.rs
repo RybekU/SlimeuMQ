@@ -4,6 +4,7 @@ use macroquad::window::next_frame;
 mod effect;
 mod game;
 mod gfx;
+mod map;
 mod phx;
 mod util;
 
