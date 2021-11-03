@@ -8,7 +8,7 @@ use macroquad::color::{GREEN, RED, YELLOW};
 use macroquad::shapes::draw_rectangle;
 use resphys::{Collider, ColliderState};
 
-pub fn visualize_hitboxes(resources: &Resources) {
+pub fn visualize_colliders(resources: &Resources) {
     let bodies = resources.get::<BodySet>().unwrap();
     let colliders = resources.get::<ColliderSet>().unwrap();
 
@@ -32,7 +32,7 @@ fn draw_collider(collider: &Collider<ColliderTag>, position: Vec2) {
     draw_rectangle(x_pos, y_pos, wh.x() * 2., wh.y() * 2., color);
 }
 
-pub fn visualize_hurtboxes(resources: &Resources) {
+pub fn visualize_boxes(resources: &Resources) {
     let hurt_queue = resources.get::<HurtQueue>().unwrap();
 
     let mut color = RED;

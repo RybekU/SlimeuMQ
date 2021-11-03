@@ -1,4 +1,6 @@
 pub mod animation;
+
+#[cfg(feature = "devtools")]
 pub mod debug_info;
 
 pub use self::animation::*;
@@ -67,6 +69,10 @@ pub fn render(game: &Game) {
             DrawTextureParams { source: Some(rect), flip_x: sprite.flip, ..Default::default() },
         );
     }
-    debug_info::visualize_hitboxes(&game.resources);
-    debug_info::visualize_hurtboxes(&game.resources);
+
+    #[cfg(feature = "devtools")]
+    {
+        debug_info::visualize_colliders(&game.resources);
+        debug_info::visualize_boxes(&game.resources);
+    }
 }
