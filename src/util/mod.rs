@@ -4,4 +4,4 @@ pub mod timer;
 
 pub use input::ButtonsState;
 pub use interpolation::lerp;
-pub use timer::Timer;
+pub use timer::FrameTimer;

@@ -24,6 +24,8 @@ legion = {version = "0.4.0", features = ["extended-tuple-impls"]}
 fxhash = "0.2.1"
 enum-map = "1.1.1"
 
+ringbuffer = "0.8.3"
+
 # logger
 log = "0.4.14"
 

@@ -15,6 +15,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "739f4a8db6605981345c5654f3a85b056ce52f37a39d34da03f25bf2151ea16e"
 
 [[package]]
+name = "array-init"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6945cc5422176fc5e602e590c2878d2c2acd9a4fe20a4baa7c28022521698ec6"
+
+[[package]]
 name = "atomic_refcell"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -770,6 +776,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ringbuffer"
+version = "0.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "20e49d3a791d79aa7683f8798b274073140865ffb9d65767ace44229d34299e3"
+dependencies = [
+ "array-init",
+]
+
+[[package]]
 name = "rustc_version"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -936,6 +951,7 @@ dependencies = [
  "macroquad",
  "miniquad",
  "resphys",
+ "ringbuffer",
  "simple_logger",
  "web_logger",
 ]

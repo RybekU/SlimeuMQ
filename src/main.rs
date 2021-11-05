@@ -34,20 +34,40 @@ async fn main() {
     let mut game = game::Game::new();
     game.init().await;
 
-    let mut update_timer = util::Timer::with_fps(UPDATE_RATE);
-    let mut current_time;
+    let mut update_timer = util::FrameTimer::with_fps(UPDATE_RATE as f64);
+
+    let mut histogram = util::timer::UpdateHistogram::new();
+    let use_histogram = false;
+
+    update_timer.time_snapping = false;
+    update_timer.time_averaging = true;
+    let mut resync = true;
     loop {
+        update_timer.get_time();
+
         // read time only once per frame
-        current_time = std::time::Instant::now();
-        while update_timer.tick(&current_time) {
+        update_timer.process_elapsed();
+
+        if resync {
+            update_timer.resync();
+            resync = false;
+        }
+
+        while update_timer.fuzzy_tick() {
             // execute schedule here
-            game.update()
+            game.update();
+            histogram.register_update();
         }
 
         {
             // unrestrained drawing
             crate::gfx::render(&game);
         }
+
+        if use_histogram {
+            histogram.tick();
+        }
+
         next_frame().await
     }
 }
