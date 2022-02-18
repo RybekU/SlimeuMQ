@@ -1,23 +1,23 @@
 mod ai;
 pub mod combat;
 mod player;
+pub mod resources;
 
-use legion::{
-    systems::{Resources, Schedule},
-    world::World,
-};
+use hecs::{CommandBuffer, World};
+
 use macroquad::texture::{load_texture, FilterMode, Texture2D};
 
-use crate::gfx::{AnimationStorage, TextureStorage};
-use crate::util::ButtonsState;
+use crate::gfx::TextureStorage;
 use crate::GAME_DIMENSIONS;
 
 use macroquad::camera::Camera2D;
 
+use self::resources::Resources;
+
 pub struct Game {
     pub world: World,
     pub resources: Resources,
-    pub schedule: Schedule,
+    // pub schedule: Schedule,
     pub textures: TextureStorage,
 
     pub camera: Camera2D,
@@ -25,9 +25,8 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Self {
-        let world = World::default();
-        let resources = init_resources();
-        let schedule = init_schedule();
+        let world = World::new();
+        let resources = Resources::new();
 
         let textures = TextureStorage::default();
         let camera = Camera2D::from_display_rect(macroquad::math::Rect::new(
@@ -36,7 +35,7 @@ impl Game {
             GAME_DIMENSIONS.0 as f32,
             GAME_DIMENSIONS.1 as f32,
         ));
-        Self { world, resources, schedule, textures, camera }
+        Self { world, resources, textures, camera }
     }
     pub async fn init(&mut self) {
         use self::ai::{AiControlled, HitMemory};
@@ -58,7 +57,7 @@ impl Game {
         {
             use crate::gfx::{AnimationTemplate, Frame};
             use macroquad::math::Rect;
-            let mut animation_storage = self.resources.get_mut::<AnimationStorage>().unwrap();
+            let animation_storage = &mut self.resources.animations;
             // TODO: Safer API that doesnt allow empty animation
             let slimeu_static = AnimationTemplate {
                 rect: Rect::new(0., 0., 16., 16.),
@@ -86,22 +85,24 @@ impl Game {
             animation_storage.insert("slimeu_run".into(), slimeu_run);
         }
 
-        let animation_storage = self.resources.get::<AnimationStorage>().unwrap();
+        let (player_bhandle, player_chandle) =
+            makeshift_player_dynamic_collider(&mut self.resources);
 
-        self.world.push((
+        let animation_storage = &self.resources.animations;
+
+        self.world.spawn((
             Position { src: Vec2::new(10.0, 10.0) },
             Sprite::new("slimeu".to_owned(), 16., 0., 16., 16.),
-            crate::gfx::Animation::new(&animation_storage, "slimeu_run"),
+            crate::gfx::Animation::new(animation_storage, "slimeu_run"),
         ));
 
-        let (player_bhandle, player_chandle) = makeshift_player_dynamic_collider(&self.resources);
         let (player_sprite, player_animation) =
-            crate::gfx::Animation::new_with_sprite(&animation_storage, "slimeu_idle");
-        let player_entity = self.world.push((
+            crate::gfx::Animation::new_with_sprite(animation_storage, "slimeu_idle");
+        let player_entity = self.world.spawn((
             Position { src: Vec2::new(100.0, 60.0) },
             Velocity { src: Vec2::new(0., 0.) },
             Gravity::new(Vec2::new(0.0, 8.0)),
-            OnGround::new(&self.resources, player_chandle),
+            OnGround::new(&mut self.resources, player_chandle),
             Hitbox::new(player_chandle),
             CombatStats::new(),
             PlayerControlled::new(),
@@ -109,8 +110,8 @@ impl Game {
             player_animation,
         ));
 
-        let (enemy_bhandle, enemy_chandle) = makeshift_enemy_dynamic_collider(&self.resources);
-        let enemy_entity = self.world.push((
+        let (enemy_bhandle, enemy_chandle) = makeshift_enemy_dynamic_collider(&mut self.resources);
+        let enemy_entity = self.world.spawn((
             Position { src: Vec2::new(80.0, 40.0) },
             Sprite::new(
                 "goblin_base".to_owned(),
@@ -126,7 +127,7 @@ impl Game {
             AiControlled::new(),
             HitMemory::new(),
         ));
-        let mut body_entity_map = self.resources.get_mut::<crate::phx::BodyEntityMap>().unwrap();
+        let body_entity_map = &mut self.resources.body_entity_map;
         body_entity_map.insert(player_bhandle, player_entity);
         body_entity_map.insert(enemy_bhandle, enemy_entity);
         {
@@ -137,7 +138,7 @@ impl Game {
                 row.iter().enumerate().for_each(|(row_id, &value)| {
                     if value > 0 {
                         makeshift_static_platform(
-                            &self.resources,
+                            &mut self.resources,
                             (row_id as f32 * 16. + 8., column_id as f32 * 16. + 8.),
                             (8., 8.),
                         );
@@ -148,57 +149,55 @@ impl Game {
     }
     pub fn update(&mut self) {
         // input should be updated on the main thread
-        self.resources.get_mut::<ButtonsState>().unwrap().update();
-        self.schedule.execute(&mut self.world, &mut self.resources);
+        self.resources.input_buttons.update();
+        schedule_execute(&mut self.world, &mut self.resources);
     }
 }
 
-fn init_resources() -> Resources {
-    let mut resources = Resources::default();
-    resources.insert(AnimationStorage::default());
-    resources.insert(crate::phx::PhysicsWorld::new());
-    resources.insert(crate::phx::BodySet::new());
-    resources.insert(crate::phx::ColliderSet::new());
-    resources.insert(crate::util::ButtonsState::new());
-    // TODO: Remove HurtQueue after replacing it with sensor hitbox
-    resources.insert(crate::game::combat::HurtQueue::new());
-    resources.insert(crate::game::combat::DamageQueue::new());
-    resources.insert(crate::phx::BodyEntityMap::default());
-    resources
-}
+fn schedule_execute(world: &mut World, resources: &mut Resources) {
+    let mut cmd = CommandBuffer::new();
 
-fn init_schedule() -> Schedule {
-    add_effect_systems(&mut Schedule::builder())
-        .add_system(crate::gfx::animation::animate_system())
-        .add_system(crate::phx::gravity_system())
-        .add_system(crate::phx::ground_check_system())
-        .add_system(self::player::update_fsm_system())
-        .add_system(self::ai::update_fsm_system())
-        .add_system(crate::phx::resphys_presync_system())
-        .add_system(crate::phx::resphys_sync_system())
-        .add_system(crate::game::combat::spread_pain_system())
-        .add_system(crate::phx::temp::reset_velocity_system())
-        .add_system(crate::game::combat::apply_damage_system())
-        .build()
-}
+    // // effect entities
+    crate::effect::effect_update_system(world, &mut cmd);
+    crate::effect::tint::tint_system(world);
 
-fn add_effect_systems(builder: &mut legion::systems::Builder) -> &mut legion::systems::Builder {
-    builder
-        .add_system(crate::effect::effect_update_system())
-        .add_system(crate::effect::tint::tint_system())
+    crate::gfx::animation::animate_system(world, &resources.animations);
+    crate::phx::gravity_system(world);
+    crate::phx::ground_check_system(world, &resources.phys);
+    self::player::update_fsm_system(world, resources);
+    self::ai::update_fsm_system(world, resources);
+    crate::phx::resphys_sync_system(
+        world,
+        &mut resources.phys,
+        &mut resources.phys_bodies,
+        &mut resources.phys_colliders,
+    );
+    crate::game::combat::spread_pain_system(
+        &mut resources.hurt_queue,
+        &mut resources.damage_queue,
+        &resources.phys,
+        &resources.phys_bodies,
+        &resources.phys_colliders,
+        &resources.body_entity_map,
+    );
+    crate::phx::temp::reset_velocity_system(world, &resources.phys);
+    crate::game::combat::apply_damage_system(world, &mut resources.damage_queue, &mut cmd);
+
+    // all new entities are created at frame end
+    cmd.run_on(world);
 }
 
 fn makeshift_static_platform(
-    resources: &Resources,
+    resources: &mut Resources,
     position: (f32, f32),
     shape: (f32, f32),
 ) -> resphys::ColliderHandle {
-    use crate::phx::{BodySet, Category, ColliderSet, ColliderTag, PhysicsWorld};
+    use crate::phx::{Category, ColliderTag};
     use glam::Vec2;
 
-    let mut physics = resources.get_mut::<PhysicsWorld>().unwrap();
-    let mut bodies = resources.get_mut::<BodySet>().unwrap();
-    let mut colliders = resources.get_mut::<ColliderSet>().unwrap();
+    let physics = &mut resources.phys;
+    let bodies = &mut resources.phys_bodies;
+    let colliders = &mut resources.phys_colliders;
 
     let body = resphys::builder::BodyDesc::new()
         .with_position(Vec2::new(position.0, position.1))
@@ -211,18 +210,18 @@ fn makeshift_static_platform(
     .with_category(Category::GROUND.bits());
 
     let bhandle = bodies.insert(body);
-    colliders.insert(collider.build(bhandle), &mut bodies, &mut physics).unwrap()
+    colliders.insert(collider.build(bhandle), bodies, physics).unwrap()
 }
 
 fn makeshift_player_dynamic_collider(
-    resources: &Resources,
+    resources: &mut Resources,
 ) -> (resphys::BodyHandle, resphys::ColliderHandle) {
-    use crate::phx::{BodySet, Category, ColliderSet, ColliderTag, PhysicsWorld};
+    use crate::phx::{Category, ColliderTag};
     use glam::Vec2;
 
-    let mut physics = resources.get_mut::<PhysicsWorld>().unwrap();
-    let mut bodies = resources.get_mut::<BodySet>().unwrap();
-    let mut colliders = resources.get_mut::<ColliderSet>().unwrap();
+    let physics = &mut resources.phys;
+    let bodies = &mut resources.phys_bodies;
+    let colliders = &mut resources.phys_colliders;
 
     let body = resphys::builder::BodyDesc::new()
         .with_position(Vec2::new(100., 60.))
@@ -237,18 +236,18 @@ fn makeshift_player_dynamic_collider(
     .with_offset(Vec2::new(0., 4.));
 
     let bhandle = bodies.insert(body);
-    (bhandle, colliders.insert(collider.build(bhandle), &mut bodies, &mut physics).unwrap())
+    (bhandle, colliders.insert(collider.build(bhandle), bodies, physics).unwrap())
 }
 
 fn makeshift_enemy_dynamic_collider(
-    resources: &Resources,
+    resources: &mut Resources,
 ) -> (resphys::BodyHandle, resphys::ColliderHandle) {
-    use crate::phx::{BodySet, Category, ColliderSet, ColliderTag, PhysicsWorld};
+    use crate::phx::{Category, ColliderTag};
     use glam::Vec2;
 
-    let mut physics = resources.get_mut::<PhysicsWorld>().unwrap();
-    let mut bodies = resources.get_mut::<BodySet>().unwrap();
-    let mut colliders = resources.get_mut::<ColliderSet>().unwrap();
+    let physics = &mut resources.phys;
+    let bodies = &mut resources.phys_bodies;
+    let colliders = &mut resources.phys_colliders;
 
     let body = resphys::builder::BodyDesc::new()
         .with_position(Vec2::new(100., 40.))
@@ -263,5 +262,5 @@ fn makeshift_enemy_dynamic_collider(
     .with_offset(Vec2::new(0., 4.));
 
     let bhandle = bodies.insert(body);
-    (bhandle, colliders.insert(collider.build(bhandle), &mut bodies, &mut physics).unwrap())
+    (bhandle, colliders.insert(collider.build(bhandle), bodies, physics).unwrap())
 }

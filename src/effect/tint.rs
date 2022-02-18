@@ -1,6 +1,6 @@
 use super::EffectData;
 use crate::gfx::Sprite;
-use legion::{system, world::SubWorld, IntoQuery};
+use hecs::World;
 use macroquad::color::{Color, WHITE};
 
 pub struct TintChange {
@@ -17,19 +17,20 @@ impl TintChange {
     }
 }
 
-#[system(for_each)]
-#[write_component(Sprite)]
-pub fn tint(world: &mut SubWorld, tint: &mut TintChange, effect: &mut EffectData) {
-    if tint.new {
-        if let Ok(sprite) = <&mut Sprite>::query().get_mut(world, effect.parent) {
-            sprite.color = tint.on_creation;
+pub fn tint_system(world: &mut World) {
+    for (_eid, (tint, effect)) in world.query::<(&mut TintChange, &EffectData)>().iter() {
+        if tint.new {
+            // world.get::<&mut Sprite>(effect.parent).unwrap();
+            if let Ok(mut sprite) = world.get_mut::<Sprite>(effect.parent) {
+                sprite.color = tint.on_creation;
+            }
+            tint.new = false;
         }
-        tint.new = false;
-    }
 
-    if effect.duration.is_sign_negative() {
-        if let Ok(sprite) = <&mut Sprite>::query().get_mut(world, effect.parent) {
-            sprite.color = tint.on_deletion;
+        if effect.duration.is_sign_negative() {
+            if let Ok(mut sprite) = world.get_mut::<Sprite>(effect.parent) {
+                sprite.color = tint.on_deletion;
+            }
         }
     }
 }

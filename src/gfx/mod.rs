@@ -13,7 +13,6 @@ use crate::phx::Position;
 use crate::GAME_SCALE;
 
 use glam::Vec2;
-use legion::IntoQuery;
 use macroquad::camera::set_camera;
 use macroquad::color::{Color, GRAY, WHITE};
 use macroquad::math::Rect;
@@ -52,12 +51,12 @@ pub fn align2subpixels(num: f32, game_scale: f32) -> f32 {
     num + (frac * game_scale).trunc() / game_scale
 }
 
-pub fn render(game: &Game) {
+pub fn render(game: &mut Game) {
     clear_background(GRAY);
     set_camera(&game.camera);
 
-    let mut query = <(&Position, &Sprite)>::query();
-    for (position, sprite) in query.iter(&game.world) {
+    let query = game.world.query_mut::<(&Position, &Sprite)>();
+    for (_eid, (position, sprite)) in query {
         let texture = game.textures.get(&sprite.texture).unwrap();
         let rect = sprite.rect;
 

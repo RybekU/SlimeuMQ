@@ -1,7 +1,9 @@
-use crate::phx::{BodySet, ColliderSet, ColliderTag, PhysicsWorld, Velocity};
+use crate::game::resources::Resources;
+use crate::phx::{ColliderTag, PhysicsWorld, Velocity};
 use crate::FRAMETIME;
 use glam::Vec2;
-use legion::{system, Resources};
+
+use hecs::World;
 use resphys::ColliderHandle;
 #[derive(Debug)]
 pub struct Gravity {
@@ -17,10 +19,21 @@ impl Gravity {
 
 // FRAME_DEPENDANT
 // https://answers.unity.com/questions/1528714/jump-not-framerate-independent.html
-#[system(for_each)]
-pub fn gravity(vel: &mut Velocity, gravity: &Gravity) {
-    if gravity.enabled {
-        vel.src += gravity.strength * FRAMETIME * 60.;
+// #[system(for_each)]
+// pub fn gravity(vel: &mut Velocity, gravity: &Gravity) {
+//     if gravity.enabled {
+//         vel.src += gravity.strength * FRAMETIME * 60.;
+//     }
+// }
+
+pub fn gravity_system(world: &mut World) {
+    // vel: &mut Velocity, gravity: &Gravity
+    let query = &mut world.query::<(&mut Velocity, &Gravity)>();
+
+    for (_id, (vel, gravity)) in query.iter() {
+        if gravity.enabled {
+            vel.src += gravity.strength * FRAMETIME * 60.;
+        }
     }
 }
 
@@ -34,10 +47,10 @@ impl OnGround {
     /// Places the sensor 1 pixel below the collider that it is supposed to check for.
     /// The sensor is 1 pixel tall and collider-1 pixels wide.
     /// It's mask should be set in a way it only collides with ground.
-    pub fn new(resources: &Resources, checked_chandle: resphys::ColliderHandle) -> Self {
-        let mut physics = resources.get_mut::<PhysicsWorld>().unwrap();
-        let mut bodies = resources.get_mut::<BodySet>().unwrap();
-        let mut colliders = resources.get_mut::<ColliderSet>().unwrap();
+    pub fn new(resources: &mut Resources, checked_chandle: resphys::ColliderHandle) -> Self {
+        let physics = &mut resources.phys;
+        let bodies = &mut resources.phys_bodies;
+        let colliders = &mut resources.phys_colliders;
 
         let (sensor, owner) = {
             let checked_collider = &colliders[checked_chandle];
@@ -57,14 +70,17 @@ impl OnGround {
             (sensor, checked_collider.owner)
         };
 
-        let sensor_handle =
-            colliders.insert(sensor.build(owner), &mut bodies, &mut physics).unwrap();
+        let sensor_handle = colliders.insert(sensor.build(owner), bodies, physics).unwrap();
         Self { sensor_handle, on_ground: true }
     }
 }
 
 // could this be part of gravity system if all components will use both?
-#[system(for_each)]
-pub fn ground_check(#[resource] phys_world: &PhysicsWorld, ground_data: &mut OnGround) {
-    ground_data.on_ground = phys_world.interactions_of(ground_data.sensor_handle).next().is_some();
+pub fn ground_check_system(world: &mut World, phys_world: &PhysicsWorld) {
+    let query = &mut world.query::<&mut OnGround>();
+
+    for (_id, ground_data) in query.iter() {
+        ground_data.on_ground =
+            phys_world.interactions_of(ground_data.sensor_handle).next().is_some();
+    }
 }

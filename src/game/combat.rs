@@ -1,9 +1,8 @@
-use super::ai::{AiControlled, HitMemory};
-use super::player::PlayerControlled;
+use super::ai::HitMemory;
 use crate::effect::{tint::TintChange, EffectData};
 use crate::phx::{BodySet, ColliderSet, PhysicsWorld, Velocity};
 use glam::Vec2;
-use legion::{system, systems::CommandBuffer, world::SubWorld, Entity, IntoQuery};
+use hecs::{CommandBuffer, Entity, World};
 use macroquad::color::Color;
 
 // Treat things that just react on getting hit (change direction, disappear) in a different way to things that actually have some sort of HP
@@ -43,26 +42,20 @@ impl DamageQueue {
     }
 }
 
-#[system]
-#[write_component(PlayerControlled)]
-#[write_component(AiControlled)]
-#[write_component(CombatStats)]
-#[write_component(Velocity)]
-#[write_component(HitMemory)]
-pub fn apply_damage(
-    world: &mut SubWorld,
+pub fn apply_damage_system(
+    world: &mut World,
+    damage_queue: &mut DamageQueue,
     command_buffer: &mut CommandBuffer,
-    #[resource] damage_queue: &mut DamageQueue,
 ) {
-    // get input's damage
-    // get output's CombatStats
     for DamageEvent { input, output } in damage_queue.events.drain(..) {
         log::debug!("A DamageEvent arrived succesfully from {:?} and hit {:?}", input, output);
 
-        let maybe_off_combat = <&CombatStats>::query().get(world, input).ok().cloned();
+        let maybe_off_combat = world.get_mut::<CombatStats>(input).ok().map(|x| x.clone());
+
         if let Ok((maybe_hit_memory, maybe_velocity, def_combat)) =
-            <(Option<&mut HitMemory>, Option<&mut Velocity>, &CombatStats)>::query()
-                .get_mut(world, output)
+            world.query_one_mut::<(Option<&mut HitMemory>, Option<&mut Velocity>, &CombatStats)>(
+                output,
+            )
         {
             if let Some(HitMemory(hit_state)) = maybe_hit_memory {
                 *hit_state = true;
@@ -79,13 +72,14 @@ pub fn apply_damage(
                 velocity.src = knockback;
             }
 
-            command_buffer.push((
+            command_buffer.spawn((
                 EffectData { parent: output, duration: 0.15 },
                 TintChange::new(macroquad::color_u8!(255, 36, 0, 192)),
             ));
         }
     }
 }
+
 // TODO: Scrap below in favor of persistent toggleable hitbox in physics engine
 
 #[derive(Debug, Clone)]
@@ -118,17 +112,15 @@ impl HurtQueue {
 }
 
 /// This system is responsible for checking checking which entities are supposed to get hurt and informing them.
-#[system]
-pub fn spread_pain(
-    #[resource] hurt_queue: &mut HurtQueue,
-    #[resource] damage_queue: &mut DamageQueue,
-    #[resource] phys_world: &PhysicsWorld,
-    #[resource] bodies: &BodySet,
-    #[resource] colliders: &ColliderSet,
-    #[resource] body_entity_map: &crate::phx::BodyEntityMap,
+pub fn spread_pain_system(
+    hurt_queue: &mut HurtQueue,
+    damage_queue: &mut DamageQueue,
+    phys_world: &PhysicsWorld,
+    bodies: &BodySet,
+    colliders: &ColliderSet,
+    body_entity_map: &crate::phx::BodyEntityMap,
 ) {
     hurt_queue.copy_msgs.clear();
-
     for hurt_info in &hurt_queue.msgs {
         let hits = phys_world.overlap_test(
             hurt_info.position,

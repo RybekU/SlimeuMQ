@@ -1,16 +1,16 @@
 use super::align2subpixels;
-use crate::game::combat::HurtQueue;
-use crate::phx::{BodySet, ColliderSet, ColliderTag};
+use crate::game::resources::Resources;
+use crate::phx::ColliderTag;
 use crate::GAME_SCALE;
 use glam::Vec2;
-use legion::systems::Resources;
+
 use macroquad::color::{GREEN, RED, YELLOW};
 use macroquad::shapes::draw_rectangle;
 use resphys::{Collider, ColliderState};
 
 pub fn visualize_colliders(resources: &Resources) {
-    let bodies = resources.get::<BodySet>().unwrap();
-    let colliders = resources.get::<ColliderSet>().unwrap();
+    let bodies = &resources.phys_bodies;
+    let colliders = &resources.phys_colliders;
 
     for (_, collider) in colliders.iter() {
         let body = &bodies[collider.owner];
@@ -33,8 +33,7 @@ fn draw_collider(collider: &Collider<ColliderTag>, position: Vec2) {
 }
 
 pub fn visualize_boxes(resources: &Resources) {
-    let hurt_queue = resources.get::<HurtQueue>().unwrap();
-
+    let hurt_queue = &resources.hurt_queue;
     let mut color = RED;
     color.a = 0.6;
 

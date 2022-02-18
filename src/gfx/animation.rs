@@ -1,6 +1,7 @@
 use super::Sprite;
 use crate::FRAMETIME;
-use legion::system;
+use hecs::World;
+
 use macroquad::math::Rect;
 
 pub struct AnimationTemplate {
@@ -81,10 +82,16 @@ impl Animation {
     }
 }
 
-/// TODO: Add Option<Hitbox>
-#[system(for_each)]
-pub fn animate(
-    #[resource] animation_storage: &super::AnimationStorage,
+pub fn animate_system(world: &mut World, animation_storage: &super::AnimationStorage) {
+    let query = world.query_mut::<(&mut Sprite, &mut Animation)>();
+
+    for (_id, (sprite, animation)) in query {
+        animate(animation_storage, sprite, animation)
+    }
+}
+
+fn animate(
+    animation_storage: &super::AnimationStorage,
     sprite: &mut Sprite,
     animation: &mut Animation,
 ) {

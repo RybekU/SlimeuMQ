@@ -1,8 +1,10 @@
-use crate::gfx::Sprite;
-use crate::phx::{OnGround, Position, Velocity};
+use hecs::{Entity, With, World};
+
+use crate::phx::Velocity;
 use crate::util::lerp;
 use crate::FRAMETIME;
-use legion::{component, system, world::SubWorld, Entity, IntoQuery};
+
+use super::resources::Resources;
 
 pub struct AiControlled {
     state: AiState,
@@ -30,43 +32,25 @@ enum AiState {
     Hurt(f32),
 }
 
-struct ResourceRefs {}
+pub fn update_fsm_system(world: &mut World, resources: &mut Resources) {
+    let mut query = world.query::<With<Velocity, &mut AiControlled>>();
 
-#[system]
-#[write_component(Velocity)]
-#[write_component(AiControlled)]
-#[write_component(Sprite)]
-#[write_component(HitMemory)]
-#[read_component(OnGround)]
-#[read_component(Position)]
-pub fn update_fsm(world: &mut SubWorld) {
-    let mut query = <(Entity, &mut AiControlled)>::query().filter(component::<Velocity>());
-
-    let mut resources = ResourceRefs {};
-
-    let (mut ac_world, mut rest_world) = world.split_for_query(&query);
-
-    for (entity, ai_controlled) in query.iter_mut(&mut ac_world) {
-        if let Some(transition) = ai_controlled.state.update(entity, &mut rest_world, &resources) {
+    for (entity, ai_controlled) in query.iter() {
+        if let Some(transition) = ai_controlled.state.update(entity, world, resources) {
             ai_controlled.state = transition;
-            ai_controlled.state.on_enter(entity, &mut rest_world, &mut resources);
+            ai_controlled.state.on_enter(entity, world, resources);
         }
     }
 }
 
 impl AiState {
-    fn update(
-        &mut self,
-        entity: &Entity,
-        world: &mut SubWorld,
-        resources: &ResourceRefs,
-    ) -> Option<Self> {
+    fn update(&mut self, entity: Entity, world: &World, resources: &Resources) -> Option<Self> {
         match self {
             Self::Idle => idle_update(entity, world, resources),
             Self::Hurt(timer) => hurt_update(entity, world, timer, resources),
         }
     }
-    fn on_enter(&mut self, entity: &Entity, world: &mut SubWorld, _resources: &mut ResourceRefs) {
+    fn on_enter(&mut self, entity: Entity, world: &World, _resources: &mut Resources) {
         match self {
             Self::Idle => idle_on_enter(entity, world),
             Self::Hurt(_timer) => hurt_on_enter(entity, world),
@@ -74,15 +58,11 @@ impl AiState {
     }
 }
 
-fn idle_update(
-    entity: &Entity,
-    world: &mut SubWorld,
-    _resources: &ResourceRefs,
-) -> Option<AiState> {
+fn idle_update(entity: Entity, world: &World, _resources: &Resources) -> Option<AiState> {
     const DECEL: f32 = 20.;
 
-    let (HitMemory(is_hit), Velocity { src: vel }) =
-        <(&mut HitMemory, &mut Velocity)>::query().get_mut(world, *entity).unwrap();
+    let mut query_o = world.query_one::<(&mut HitMemory, &mut Velocity)>(entity).unwrap();
+    let (HitMemory(is_hit), Velocity { src: vel }) = query_o.get().unwrap();
 
     vel.set_x(lerp(0., vel.x(), f32::exp2(-DECEL * FRAMETIME)));
 
@@ -98,20 +78,20 @@ fn idle_update(
     None
 }
 
-fn idle_on_enter(_entity: &Entity, _world: &SubWorld) {
+fn idle_on_enter(_entity: Entity, _world: &World) {
     log::info!("Enemy idle");
 }
 
 fn hurt_update(
-    entity: &Entity,
-    world: &mut SubWorld,
+    entity: Entity,
+    world: &World,
     timer: &mut f32,
-    _resources: &ResourceRefs,
+    _resources: &Resources,
 ) -> Option<AiState> {
     const DECEL: f32 = 10.0;
 
-    let (HitMemory(is_hit), Velocity { src: vel }) =
-        <(&mut HitMemory, &mut Velocity)>::query().get_mut(world, *entity).unwrap();
+    let mut query_o = world.query_one::<(&mut HitMemory, &mut Velocity)>(entity).unwrap();
+    let (HitMemory(is_hit), Velocity { src: vel }) = query_o.get().unwrap();
     *is_hit = false;
 
     *timer -= FRAMETIME;
@@ -129,6 +109,6 @@ fn hurt_update(
     None
 }
 
-fn hurt_on_enter(_entity: &Entity, _world: &SubWorld) {
+fn hurt_on_enter(_entity: Entity, _world: &World) {
     log::info!("Enemy got hit");
 }

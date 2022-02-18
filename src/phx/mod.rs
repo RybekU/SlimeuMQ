@@ -9,7 +9,7 @@ pub type PhysicsWorld = resphys::PhysicsWorld<ColliderTag>;
 pub type BodySet = resphys::BodySet;
 pub type ColliderSet = resphys::ColliderSet<ColliderTag>;
 
-pub type BodyEntityMap = fxhash::FxHashMap<resphys::BodyHandle, legion::Entity>;
+pub type BodyEntityMap = fxhash::FxHashMap<resphys::BodyHandle, hecs::Entity>;
 
 pub use gravity::*;
 pub use hitbox::*;

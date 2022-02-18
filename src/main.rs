@@ -61,7 +61,7 @@ async fn main() {
 
         {
             // unrestrained drawing
-            crate::gfx::render(&game);
+            crate::gfx::render(&mut game);
         }
 
         if use_histogram {
