@@ -55,12 +55,12 @@ impl OnGround {
         let (sensor, owner) = {
             let checked_collider = &colliders[checked_chandle];
             let offset =
-                checked_collider.offset + Vec2::new(0., checked_collider.shape.half_exts.y() + 0.5);
+                checked_collider.offset + Vec2::new(0., checked_collider.shape.half_exts.y + 0.5);
 
             // the sensor is under the collider, and tiny bit thinner to not trigger on walls
             let sensor = resphys::builder::ColliderDesc::new(
                 resphys::AABB {
-                    half_exts: Vec2::new(checked_collider.shape.half_exts.x() - 0.5, 0.5),
+                    half_exts: Vec2::new(checked_collider.shape.half_exts.x - 0.5, 0.5),
                 },
                 ColliderTag::Player,
             )

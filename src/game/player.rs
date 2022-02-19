@@ -72,7 +72,7 @@ fn idle_update(entity: Entity, world: &World, resources: &Resources) -> Option<P
     }
 
     if !on_ground {
-        return Some(PlayerState::InAir(vel.src.y() > 0.));
+        return Some(PlayerState::InAir(vel.src.y > 0.));
     }
 
     if inputs.is_pressed(Button::Right) ^ inputs.is_pressed(Button::Left) {
@@ -80,10 +80,10 @@ fn idle_update(entity: Entity, world: &World, resources: &Resources) -> Option<P
     }
 
     // decelerate quickly when no input is given
-    vel.src.set_x(lerp(0., vel.src.x(), f32::exp2(-DECEL * FRAMETIME)));
+    vel.src.x = lerp(0., vel.src.x, f32::exp2(-DECEL * FRAMETIME));
 
-    if vel.src.x().abs() < 1. {
-        vel.src.set_x(0.);
+    if vel.src.x.abs() < 1. {
+        vel.src.x = 0.;
     }
 
     None
@@ -130,14 +130,14 @@ fn walk_update(entity: Entity, world: &World, resources: &Resources) -> Option<P
         _ => *flipped,
     };
 
-    vel.src.set_x(lerp(target_speed, vel.src.x(), f32::exp2(-ACCEL * FRAMETIME)));
+    vel.src.x = lerp(target_speed, vel.src.x, f32::exp2(-ACCEL * FRAMETIME));
 
-    if vel.src.x().abs() < 1. {
-        vel.src.set_x(0.);
+    if vel.src.x.abs() < 1. {
+        vel.src.x = 0.;
     };
 
     if !on_ground {
-        return Some(PlayerState::InAir(vel.src.y() > 0.));
+        return Some(PlayerState::InAir(vel.src.y > 0.));
     }
 
     None
@@ -172,10 +172,10 @@ fn in_air_update(
         TARGET_SPEED * dir as f32
     };
 
-    vel.src.set_x(lerp(target_speed, vel.src.x(), f32::exp2(-ACCEL * FRAMETIME)));
+    vel.src.x = lerp(target_speed, vel.src.x, f32::exp2(-ACCEL * FRAMETIME));
 
-    if vel.src.x().abs() < 1. {
-        vel.src.set_x(0.);
+    if vel.src.x.abs() < 1. {
+        vel.src.x = 0.;
     }
 
     if let atk_option @ Some(_) = handle_attack(inputs) {
@@ -190,8 +190,8 @@ fn in_air_update(
         }
     }
 
-    if *falling != (vel.src.y() > 0.) {
-        *falling = vel.src.y() > 0.;
+    if *falling != (vel.src.y > 0.) {
+        *falling = vel.src.y > 0.;
     }
 
     None
@@ -217,10 +217,10 @@ fn attack_update(
 
     let decel = if on_ground { LAND_DECEL } else { AIR_DECEL };
 
-    vel.src.set_x(lerp(0., vel.src.x(), f32::exp2(-decel * FRAMETIME)));
+    vel.src.x = lerp(0., vel.src.x, f32::exp2(-decel * FRAMETIME));
 
-    if vel.src.x().abs() < 1. {
-        vel.src.set_x(0.);
+    if vel.src.x.abs() < 1. {
+        vel.src.x = 0.;
     }
 
     if *cd <= 0. {
@@ -252,7 +252,7 @@ fn attack_on_enter(entity: Entity, world: &World, resources: &mut Resources) {
 
 fn handle_jump(inputs: &ButtonsState, vel: &mut Velocity) {
     if inputs.pressed(Button::Jump) {
-        vel.src.set_y(-156.);
+        vel.src.y = -156.;
     }
 }
 

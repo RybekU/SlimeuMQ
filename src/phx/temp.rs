@@ -12,10 +12,10 @@ pub fn reset_velocity_system(world: &mut World, phys_world: &PhysicsWorld) {
 // TODO: make sure to reset velocity only if normal and direction match
 pub fn reset_velocity(phys_world: &PhysicsWorld, hitbox: &Hitbox, vel: &mut Velocity) {
     for (_, info) in phys_world.collisions_of(hitbox.src) {
-        if info.normal.x() != 0. {
-            vel.src.set_x(0.);
+        if info.normal.x != 0. {
+            vel.src.x = 0.;
         } else {
-            vel.src.set_y(0.);
+            vel.src.y = 0.;
         }
     }
 }

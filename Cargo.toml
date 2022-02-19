@@ -2,7 +2,7 @@
 name = "slimeu-mq"
 version = "0.1.0"
 authors = ["Rybek"]
-edition = "2018"
+edition = "2021"
 
 [features]
 default = ["devtools"]
@@ -12,25 +12,25 @@ devtools = []
 [dependencies]
 
 # framework
-macroquad = {git="https://github.com/not-fl3/macroquad", rev="9da9b4f"}
-miniquad = { version = "=0.3.0-alpha.37" }
+macroquad = {git="https://github.com/not-fl3/macroquad", rev="919f570"}
+miniquad = { version = "=0.3.0-alpha.42" }
 
-glam = {version = "0.9", features = ["scalar-math"] }
+glam = {version = "0.20.2", features = ["scalar-math"] }
 
 # ECS
 hecs = "0.7.6"
 
 #hashmap
 fxhash = "0.2.1"
-enum-map = "1.1.1"
+enum-map = "2.0.2"
 
-ringbuffer = "0.8.3"
+ringbuffer = "0.8.2"
 
 # logger
 log = "0.4.14"
 
 # collision
-resphys = "0.1.0"
+resphys =  { path = "../resphys" }
 bitflags = "1.3.2"
 
 # tilemap

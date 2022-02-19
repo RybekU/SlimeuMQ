@@ -64,10 +64,10 @@ fn idle_update(entity: Entity, world: &World, _resources: &Resources) -> Option<
     let mut query_o = world.query_one::<(&mut HitMemory, &mut Velocity)>(entity).unwrap();
     let (HitMemory(is_hit), Velocity { src: vel }) = query_o.get().unwrap();
 
-    vel.set_x(lerp(0., vel.x(), f32::exp2(-DECEL * FRAMETIME)));
+    vel.x = lerp(0., vel.x, f32::exp2(-DECEL * FRAMETIME));
 
-    if vel.x().abs() < 1. {
-        vel.set_x(0.);
+    if vel.x.abs() < 1. {
+        vel.x = 0.;
     }
 
     if *is_hit {
@@ -96,10 +96,10 @@ fn hurt_update(
 
     *timer -= FRAMETIME;
 
-    vel.set_x(lerp(0., vel.x(), f32::exp2(-DECEL * FRAMETIME)));
+    vel.x = lerp(0., vel.x, f32::exp2(-DECEL * FRAMETIME));
 
-    if vel.x().abs() < 1. {
-        vel.set_x(0.);
+    if vel.x.abs() < 1. {
+        vel.x = 0.;
     }
 
     if *timer <= 0. {

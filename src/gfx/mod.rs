@@ -62,8 +62,8 @@ pub fn render(game: &mut Game) {
 
         draw_texture_ex(
             *texture,
-            align2subpixels(position.src.x() + sprite.offset.x(), GAME_SCALE as f32),
-            align2subpixels(position.src.y() + sprite.offset.y(), GAME_SCALE as f32),
+            align2subpixels(position.src.x + sprite.offset.x, GAME_SCALE as f32),
+            align2subpixels(position.src.y + sprite.offset.y, GAME_SCALE as f32),
             sprite.color,
             DrawTextureParams { source: Some(rect), flip_x: sprite.flip, ..Default::default() },
         );

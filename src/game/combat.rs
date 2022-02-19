@@ -64,7 +64,7 @@ pub fn apply_damage_system(
             let knockback = if let Some(off_combat) = maybe_off_combat {
                 off_combat.kb_force * (1. - def_combat.kb_res)
             } else {
-                Vec2::zero()
+                Vec2::ZERO
             };
 
             if let Some(velocity) = maybe_velocity {
