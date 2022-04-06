@@ -1,5 +1,6 @@
 pub mod input;
 pub mod interpolation;
+pub mod state_machine;
 pub mod timer;
 
 pub use input::ButtonsState;

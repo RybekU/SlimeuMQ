@@ -1,6 +1,6 @@
+pub mod agent;
 mod ai;
 pub mod combat;
-mod player;
 pub mod resources;
 
 use hecs::{CommandBuffer, World};
@@ -12,12 +12,12 @@ use crate::GAME_DIMENSIONS;
 
 use macroquad::camera::Camera2D;
 
+use self::agent::controller::update_fsm_system;
 use self::resources::Resources;
 
 pub struct Game {
     pub world: World,
     pub resources: Resources,
-    // pub schedule: Schedule,
     pub textures: TextureStorage,
 
     pub camera: Camera2D,
@@ -38,9 +38,9 @@ impl Game {
         Self { world, resources, textures, camera }
     }
     pub async fn init(&mut self) {
+        use self::agent::controller::PlayerControlledV2;
         use self::ai::{AiControlled, HitMemory};
         use self::combat::CombatStats;
-        use self::player::PlayerControlled;
         use crate::gfx::Sprite;
         use crate::phx::{Gravity, Hitbox, OnGround, Position, Velocity};
         use glam::Vec2;
@@ -105,7 +105,7 @@ impl Game {
             OnGround::new(&mut self.resources, player_chandle),
             Hitbox::new(player_chandle),
             CombatStats::new(),
-            PlayerControlled::new(),
+            PlayerControlledV2::new(),
             player_sprite,
             player_animation,
         ));
@@ -164,7 +164,7 @@ fn schedule_execute(world: &mut World, resources: &mut Resources) {
     crate::gfx::animation::animate_system(world, &resources.animations);
     crate::phx::gravity_system(world);
     crate::phx::ground_check_system(world, &resources.phys);
-    self::player::update_fsm_system(world, resources);
+    update_fsm_system(world, resources);
     self::ai::update_fsm_system(world, resources);
     crate::phx::resphys_sync_system(
         world,
