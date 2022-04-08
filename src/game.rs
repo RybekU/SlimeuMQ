@@ -8,9 +8,7 @@ use hecs::{CommandBuffer, World};
 use macroquad::texture::{load_texture, FilterMode, Texture2D};
 
 use crate::gfx::TextureStorage;
-use crate::GAME_DIMENSIONS;
-
-use macroquad::camera::Camera2D;
+use crate::util::Camera;
 
 use self::agent::controller::update_fsm_system;
 use self::resources::Resources;
@@ -20,7 +18,7 @@ pub struct Game {
     pub resources: Resources,
     pub textures: TextureStorage,
 
-    pub camera: Camera2D,
+    pub camera: Camera,
 }
 
 impl Game {
@@ -29,12 +27,8 @@ impl Game {
         let resources = Resources::new();
 
         let textures = TextureStorage::default();
-        let camera = Camera2D::from_display_rect(macroquad::math::Rect::new(
-            0.0,
-            0.0,
-            GAME_DIMENSIONS.0 as f32,
-            GAME_DIMENSIONS.1 as f32,
-        ));
+        let camera = Camera::new();
+
         Self { world, resources, textures, camera }
     }
     pub async fn init(&mut self) {
@@ -127,6 +121,10 @@ impl Game {
             AiControlled::new(),
             HitMemory::new(),
         ));
+
+        // setup camera to just follow player immediately, for now
+        self.camera.target = Some(player_entity);
+
         let body_entity_map = &mut self.resources.body_entity_map;
         body_entity_map.insert(player_bhandle, player_entity);
         body_entity_map.insert(enemy_bhandle, enemy_entity);
@@ -150,11 +148,11 @@ impl Game {
     pub fn update(&mut self) {
         // input should be updated on the main thread
         self.resources.input_buttons.update();
-        schedule_execute(&mut self.world, &mut self.resources);
+        schedule_execute(&mut self.world, &mut self.resources, &mut self.camera);
     }
 }
 
-fn schedule_execute(world: &mut World, resources: &mut Resources) {
+fn schedule_execute(world: &mut World, resources: &mut Resources, camera: &mut Camera) {
     let mut cmd = CommandBuffer::new();
 
     // // effect entities
@@ -182,6 +180,8 @@ fn schedule_execute(world: &mut World, resources: &mut Resources) {
     );
     crate::phx::temp::reset_velocity_system(world, &resources.phys);
     crate::game::combat::apply_damage_system(world, &mut resources.damage_queue, &mut cmd);
+
+    camera.update(world);
 
     // all new entities are created at frame end
     cmd.run_on(world);

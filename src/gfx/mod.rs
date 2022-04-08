@@ -53,7 +53,7 @@ pub fn align2subpixels(num: f32, game_scale: f32) -> f32 {
 
 pub fn render(game: &mut Game) {
     clear_background(GRAY);
-    set_camera(&game.camera);
+    set_camera(game.camera.src());
 
     let query = game.world.query_mut::<(&Position, &Sprite)>();
     for (_eid, (position, sprite)) in query {
