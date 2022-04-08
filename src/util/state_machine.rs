@@ -58,11 +58,21 @@ impl State {
     }
 }
 
+// Could conditions be function objects for clearer API?
 pub fn invert_condition(
     condition: impl Fn(Entity, &World, &Resources) -> bool + 'static + Send + Sync,
 ) -> Box<dyn Fn(Entity, &World, &Resources) -> bool + 'static + Send + Sync> {
     Box::new(move |entity: Entity, world: &World, resources: &Resources| {
         !condition(entity, world, resources)
+    })
+}
+
+pub fn and_condition(
+    condition1: impl Fn(Entity, &World, &Resources) -> bool + 'static + Send + Sync,
+    condition2: impl Fn(Entity, &World, &Resources) -> bool + 'static + Send + Sync,
+) -> Box<dyn Fn(Entity, &World, &Resources) -> bool + 'static + Send + Sync> {
+    Box::new(move |entity: Entity, world: &World, resources: &Resources| {
+        condition1(entity, world, resources) && condition2(entity, world, resources)
     })
 }
 

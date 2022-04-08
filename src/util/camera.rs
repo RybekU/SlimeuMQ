@@ -1,7 +1,7 @@
 use hecs::{Entity, World};
 use macroquad::camera::Camera2D;
 
-use crate::{phx::Position, GAME_DIMENSIONS};
+use crate::{gfx::align2subpixels, phx::Position, GAME_DIMENSIONS, GAME_SCALE};
 
 pub struct Camera {
     src: Camera2D,
@@ -26,7 +26,10 @@ impl Camera {
         // get target location
         // set that to camera center
         if let Some(position) = self.target.and_then(|entity| world.get::<Position>(entity).ok()) {
-            self.src.target = macroquad::prelude::Vec2::new(position.src.x, position.src.y);
+            self.src.target = macroquad::prelude::Vec2::new(
+                align2subpixels(position.src.x, GAME_SCALE as f32),
+                align2subpixels(position.src.y, GAME_SCALE as f32),
+            );
         }
 
         // TODO: interpolate with current location with previous
