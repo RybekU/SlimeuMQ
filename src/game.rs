@@ -95,12 +95,11 @@ impl Game {
         let player_entity = self.world.spawn((
             Position { src: Vec2::new(100.0, 60.0) },
             Velocity { src: Vec2::new(0., 0.) },
-            Gravity::new(Vec2::new(0.0, 8.0)),
+            Gravity::new(Vec2::new(0.0, 448. / 60.)),
             OnGround::new(&mut self.resources, player_chandle),
             Hitbox::new(player_chandle),
             CombatStats::new(),
             PlayerControlledV2::new(),
-            agent::controller::JumpData { jump_force: 0. },
             player_sprite,
             player_animation,
         ));
@@ -116,7 +115,7 @@ impl Game {
                 goblin_texture.height(),
             ),
             Velocity { src: Vec2::new(0., 0.) },
-            Gravity::new(Vec2::new(0.0, 8.0)),
+            Gravity::new(Vec2::new(0.0, 448. / 60.)),
             Hitbox::new(enemy_chandle),
             CombatStats::new(),
             AiControlled::new(),

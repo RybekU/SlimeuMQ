@@ -1,14 +1,12 @@
 mod jump_air;
 mod movement;
 
-pub use self::jump_air::JumpData;
-
 use self::jump_air::{
-    airtime_on_enter, airtime_on_update, descending, jump, jump_held, jump_on_enter,
+    airtime_on_enter, airtime_on_update, descending, jump, jump_held, jump_on_enter, jump_on_exit,
     jump_on_update, land,
 };
 use self::movement::{
-    idle_on_enter, idle_on_update, move_directional, run_on_enter, run_on_exit, run_on_update,
+    idle_on_enter, idle_on_update, move_directional, run_on_enter, run_on_update,
 };
 use crate::game::resources::Resources;
 use crate::phx::Velocity;
@@ -41,7 +39,6 @@ impl PlayerControlledV2 {
         let run_state = State::new()
             .on_enter(run_on_enter)
             .on_update(run_on_update)
-            .on_exit(run_on_exit)
             .add_transition(StateID::Idle as usize, invert_condition(move_directional))
             .add_transition(StateID::Jump as usize, jump)
             .add_transition(StateID::Airtime as usize, invert_condition(land));
@@ -49,6 +46,7 @@ impl PlayerControlledV2 {
         let jump_state = State::new()
             .on_enter(jump_on_enter)
             .on_update(jump_on_update)
+            .on_exit(jump_on_exit)
             .add_transition(StateID::Airtime as usize, descending)
             .add_transition(StateID::Airtime as usize, invert_condition(jump_held));
 

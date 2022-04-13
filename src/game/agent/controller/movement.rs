@@ -46,8 +46,6 @@ pub fn run_on_enter(entity: Entity, world: &World, _resources: &mut Resources) {
     animation.change("slimeu_run");
 }
 
-pub fn run_on_exit(_entity: Entity, _world: &World, _resources: &mut Resources) {}
-
 pub fn run_on_update(entity: Entity, world: &World, resources: &mut Resources) {
     const TARGET_SPEED: f32 = 64.;
     const ACCEL: f32 = 10.0;
