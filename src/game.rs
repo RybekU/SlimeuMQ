@@ -100,6 +100,7 @@ impl Game {
             Hitbox::new(player_chandle),
             CombatStats::new(),
             PlayerControlledV2::new(),
+            agent::controller::JumpData { jump_force: 0. },
             player_sprite,
             player_animation,
         ));
