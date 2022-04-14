@@ -28,7 +28,7 @@ pub struct Sprite {
     /// white for default
     pub color: Color,
     /// if true sprite faces left
-    pub flip: bool,
+    pub face_left: bool,
 }
 
 impl Sprite {
@@ -39,7 +39,7 @@ impl Sprite {
             rect: Rect::new(x, y, width, height),
             offset: -Vec2::new(width, height) / 2.,
             color: WHITE,
-            flip: false,
+            face_left: false,
         }
     }
 }
@@ -65,7 +65,11 @@ pub fn render(game: &mut Game) {
             align2subpixels(position.src.x + sprite.offset.x, GAME_SCALE as f32),
             align2subpixels(position.src.y + sprite.offset.y, GAME_SCALE as f32),
             sprite.color,
-            DrawTextureParams { source: Some(rect), flip_x: sprite.flip, ..Default::default() },
+            DrawTextureParams {
+                source: Some(rect),
+                flip_x: sprite.face_left,
+                ..Default::default()
+            },
         );
     }
 
