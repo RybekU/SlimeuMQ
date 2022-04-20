@@ -5,6 +5,9 @@ const TEST_MAP: &str = "test2.ldtk";
 const MAGIC_ID: i64 = 25;
 const MAGIC_LAYER: &str = "Front";
 
+// TODO: Better representation, define entry points in the LDtk file, replace module with `Stage` definition
+//  and extract useful informations from the ldtk files.
+
 // Tilesize is 16x16
 pub struct Tilemap {
     pub width: u32,

@@ -2,13 +2,13 @@ pub mod agent;
 mod ai;
 pub mod combat;
 pub mod resources;
+pub mod stage;
 
 use hecs::{CommandBuffer, World};
 
 use macroquad::texture::{load_texture, FilterMode, Texture2D};
 
 use crate::gfx::TextureStorage;
-use crate::util::Camera;
 
 use self::agent::controller::update_fsm_system;
 use self::resources::Resources;
@@ -17,8 +17,6 @@ pub struct Game {
     pub world: World,
     pub resources: Resources,
     pub textures: TextureStorage,
-
-    pub camera: Camera,
 }
 
 impl Game {
@@ -27,9 +25,8 @@ impl Game {
         let resources = Resources::new();
 
         let textures = TextureStorage::default();
-        let camera = Camera::new();
 
-        Self { world, resources, textures, camera }
+        Self { world, resources, textures }
     }
     pub async fn init(&mut self) {
         use self::agent::controller::PlayerControlledV2;
@@ -123,7 +120,7 @@ impl Game {
         ));
 
         // setup camera to just follow player immediately, for now
-        self.camera.target = Some(player_entity);
+        self.resources.camera.target = Some(player_entity);
 
         let body_entity_map = &mut self.resources.body_entity_map;
         body_entity_map.insert(player_bhandle, player_entity);
@@ -148,11 +145,11 @@ impl Game {
     pub fn update(&mut self) {
         // input should be updated on the main thread
         self.resources.input_buttons.update();
-        schedule_execute(&mut self.world, &mut self.resources, &mut self.camera);
+        schedule_execute(&mut self.world, &mut self.resources);
     }
 }
 
-fn schedule_execute(world: &mut World, resources: &mut Resources, camera: &mut Camera) {
+fn schedule_execute(world: &mut World, resources: &mut Resources) {
     let mut cmd = CommandBuffer::new();
 
     // // effect entities
@@ -181,7 +178,7 @@ fn schedule_execute(world: &mut World, resources: &mut Resources, camera: &mut C
     crate::phx::temp::reset_velocity_system(world, &resources.phys);
     crate::game::combat::apply_damage_system(world, &mut resources.damage_queue, &mut cmd);
 
-    camera.update(world);
+    resources.camera.update(world, resources.stage.current_room());
 
     // all new entities are created at frame end
     cmd.run_on(world);
